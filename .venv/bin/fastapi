@@ -1,6 +1,4 @@
-#!/bin/sh
-'''exec' "/Users/evgene/Documents/GitHub/currency converter FastAPI/.venv/bin/python3.12" "$0" "$@"
-' '''
+#!/Users/evgene/Documents/GitHub/Exchange-rate/.venv/bin/python3.12
 # -*- coding: utf-8 -*-
 import re
 import sys

@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV "/Users/evgene/Documents/GitHub/currency converter FastAPI/.venv"
+set -gx VIRTUAL_ENV "/Users/evgene/Documents/GitHub/Exchange-rate/.venv"
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/bin" $PATH

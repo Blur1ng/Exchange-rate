@@ -15,4 +15,5 @@ async def bitcoin_rate(verify_user: dict = Depends(verify_jwt_token)):
         data = response.json()  # Преобразует ответ в формат JSON
 
         price_usd = data["bpi"]["USD"]["rate_float"]
-        return {"BTCUSDT":price_usd}
+        # Отличе цены API и Trading View на 810 пунктов
+        return {"BTCUSDT":price_usd+810}

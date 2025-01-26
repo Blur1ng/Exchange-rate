@@ -4,10 +4,10 @@ from datetime import datetime, timedelta, UTC
 
 from api.models.users import User, User_Form
 from api.database_con import async_session, AsyncSession
+from api.database_con import redis_client, redis
 
 from core.security import pwd_context
 from core.security import create_jwt_token
-
 
 router_users = APIRouter()
 
@@ -28,52 +28,45 @@ def check_username(username: str) -> bool:
         return True
     return False
 
-@router_users.post("/auth/register/")
-async def register(user: User_Form, db: AsyncSession = Depends(get_db)):
-    # Регистрация пользователя и проверка вводимых данных
-    if not check_password(user.password):
-        raise HTTPException(401, "[-] Weak password")
-    if not check_username(user.username):
-        raise HTTPException(401, "[-] Invalid username")
-    
-    hash_password = pwd_context.hash(user.password)
-    user = User(username=user.username, password=hash_password)
-    db.add(user)
-    await db.commit()
-    await db.refresh(user)
-    return {"[+] Registration was successful"}
 
-blocked_users = {} # {username: time_until_release}
-wrong_attempts = {} # {username: number_of_wrong_attemtpts}
-
-def check_for_past_tense(username: str):
+async def check_for_past_tense(username: str, redis_client: redis.Redis) -> bool:
+    # Проверка заблокирован ли пользователь
     # Функция не дает пользователю войти, если он все еще в бан листе
     # Даже, если он ввел верные данные, система их не проверяет
-    if f"{username}" in blocked_users:
-        if datetime.now(UTC) > blocked_users[f"{username}"]:
-            wrong_attempts.pop(f"{username}")
-            blocked_users.pop(f"{username}")
-            return 1
-        return 0
-    return 1
+    block_key = f"blocked:{username}"
+    block_time = await redis_client.get(block_key)
 
-def anti_password_selection_system(username: str):
+    if block_time:
+        block_time = datetime.fromisoformat(block_time.decode())
+        if datetime.now() > block_time:
+            # Разблокировать пользователя
+            await redis_client.delete(block_key)
+            await redis_client.delete(f"wrong_attempts:{username}")
+            return True
+        return False
+    return True
+
+async def anti_password_selection_system(username: str, redis_client: redis.Redis) -> bool:
+    # Анти-спам система для попыток входа
     # При 5 неправильных попытках ввода пользователь помещается в бан лист,
-    # Где ожидает следующих попыток через timedelta(minutes=1)
-    if f"{username}" not in wrong_attempts:
-        wrong_attempts[f"{username}"] = 1
+    # Где ожидает следующих попыток
+    attempts_key = f"wrong_attempts:{username}"
+    wrong_attempts = await redis_client.get(attempts_key)
+
+    if wrong_attempts:
+        wrong_attempts = int(wrong_attempts.decode())
+        wrong_attempts += 1
     else:
-        attempts = wrong_attempts[f"{username}"]
-        wrong_attempts[f"{username}"] = attempts + 1
-        if attempts + 1 >= 5:
-            if f"{username}" in blocked_users:
-                if datetime.now(UTC) > blocked_users[f"{username}"]:
-                    wrong_attempts.pop(f"{username}")
-                    blocked_users.pop(f"{username}")
-                    return 0
-            blocked_users[f"{username}"] = datetime.now(UTC) + timedelta(minutes=1)
-            return 1
-    return 0
+        wrong_attempts = 1
+
+    await redis_client.set(attempts_key, wrong_attempts, ex=60)
+
+    if wrong_attempts >= 5:
+        # Блокируем пользователя на 1 минуту
+        block_key = f"blocked:{username}"
+        await redis_client.set(block_key, (datetime.now() + timedelta(minutes=1)).isoformat(), ex=60)
+        return True
+    return False
 
 @router_users.post("/auth/login/")
 async def login(user_data: User_Form, response: Response, db: AsyncSession = Depends(get_db)):
@@ -84,7 +77,7 @@ async def login(user_data: User_Form, response: Response, db: AsyncSession = Dep
     result = await db.execute(select(User).filter(User.username == username))
     user = result.scalar_one_or_none()
 
-    if check_for_past_tense(username) and user and pwd_context.verify(user_data.password, user.password):
+    if await check_for_past_tense(username, redis_client) and user and pwd_context.verify(user_data.password, user.password):
         # Время жизни токена
         token_lifetime = datetime.now(UTC) + timedelta(minutes=5)
         token = create_jwt_token({"username": username, "exp": token_lifetime})
@@ -100,7 +93,8 @@ async def login(user_data: User_Form, response: Response, db: AsyncSession = Dep
         )
         return {"message": "[+] Login successful"}
         
-    if anti_password_selection_system(username):
+    if await anti_password_selection_system(username, redis_client):
         raise HTTPException(status_code=429, detail="[-] Too many attempts, try again in a few minutes", headers={"WWW-Authenticate": "Bearer"})
+    
     raise HTTPException(status_code=401, detail="[-] Invalid credentials", headers={"WWW-Authenticate": "Bearer"})
 
