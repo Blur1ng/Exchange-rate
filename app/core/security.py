@@ -9,6 +9,8 @@ load_dotenv()
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
+CMC_API_KEY = os.getenv("CMC_API_KEY")
+FIXER_API_KEY = os.getenv("FIXER_API_KEY")
 
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
