@@ -13,17 +13,11 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             // Запрос курса для выбранного обмена
             let response;
-            if (exchange === "BTC" || exchange === "ETH") {
-                response = await fetch(`/api/v1/rate/coin/${exchange}/`);
-                const data = await response.json();
-                start_price = data[`${exchange}USDT`];
-            } else {
-                response = await fetch(`/api/v1/rate/rub_to/${exchange}/`);
-                const data = await response.json();
-                start_price = parseFloat(data[exchange].replace(",", "."));
-            }
+            response = await fetch(`/api/v1/rate/coin/${exchange}/`);
+            const data_coin = await response.json();
+            start_price = data_coin[`${exchange}USDT`];
 
-            // Получаем имя пользователя из JWT токена
+            // 1 Получаем имя пользователя из JWT токена
             response = await fetch(`/api/v1/verify_jwt_token/`);
             const data = await response.json();
             user_name = data.user_name;
@@ -39,7 +33,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 user_name: user_name,
             };
 
-            // Отправляем данные для сохранения ставки
+            // 2 Отправляем данные для сохранения ставки
             const tradeResponse = await fetch("/api/v1/trade_it", {
                 method: "POST",
                 headers: {
@@ -49,43 +43,27 @@ document.addEventListener("DOMContentLoaded", function () {
                 body: JSON.stringify(formData),
             });
 
-            if (!tradeResponse.ok) {
-                throw new Error("Ошибка при размещении ставки");
-            }
-
             const result = await tradeResponse.json();
-            resultContainer.innerText = `Сделка успешно состоялась!`;
+        
+            resultContainer.innerText = `Сделка создана! ID: ${result.trade_id}`;
             resultContainer.classList.add("show");
 
-            // Ожидание указанного времени и затем отправка данных для расчета результата
-            setTimeout(async () => {
-                try {
-                    response = await fetch(`/api/v1/rate/coin/${exchange}/`);
-                    const data = await response.json();
-                    const end_price = data[`${exchange}USDT`];
-
-                    const endData = {
-                        trade_id: result.trade_id,
-                        end_price: end_price,
-                    };
-
-                    const EndTradeResponse = await fetch("/api/v1/check_trade/", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        credentials: "include",
-                        body: JSON.stringify(endData),
-                    });
-
-                    const checkResult = await EndTradeResponse.json();
-                    resultContainer.innerText = checkResult.message;
-                    resultContainer.classList.add("show");
-                } catch (error) {
-                    resultContainer.innerText = "Ошибка при получении данных для расчета результата: " + error.message;
-                    resultContainer.classList.add("show");
+            // Функция для проверки статуса
+            const checkStatus = async () => {
+                const response = await fetch(`/api/v1/trade_status/${result.trade_id}`);
+                const data = await response.json();
+                
+                if (data.status === "completed") {
+                    resultContainer.innerText = data.result === "W" 
+                        ? `Победа! +${formData.bet_amount * formData.leverage}$`
+                        : `Проигрыш -${formData.bet_amount * formData.leverage}$`;
+                } else if (data.status === "pending") {
+                    setTimeout(checkStatus, 5000); // Проверяем каждые 5 секунд
                 }
-            }, formData.time * 60 * 1000); // Ждем указанное время в минутах
+            };
+            resultContainer.classList.add("show");
+            checkStatus();
+
         } catch (error) {
             resultContainer.innerText = "Ошибка: " + error.message;
             resultContainer.classList.add("show");

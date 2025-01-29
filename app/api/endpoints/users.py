@@ -1,17 +1,14 @@
 from fastapi import APIRouter, HTTPException, Depends, Response, Request
 from sqlalchemy.future import select
-from sqlalchemy import func
 from datetime import datetime, timedelta, UTC
 import re
 
 from api.models.users import User_Form
-from webapp.models.trade import Trade_Form, Trade_EndResult
-from core.database_con import async_session, AsyncSession
-from core.database_con import redis_client
-from core.database_con import User, Trade, Trade_Result
+from webapp.models.trade import Trade_Form
+from core.database_con import async_session, AsyncSession, redis_client, User, Trade, Trade_Result
+from core.security import pwd_context, create_jwt_token, verify_jwt_token
 
-from core.security import pwd_context
-from core.security import create_jwt_token, verify_jwt_token
+from core.celery_con import celery, process_trade
 
 router_users = APIRouter()
 
@@ -23,8 +20,11 @@ async def get_db():
         yield db
 
 def check_password(password: str) -> bool:
-    # Проверка пароля на достаточную надежность
-    if password.lower()!=password and 6 <= len(password) <= 17 and not re.match("^[a-zA-Z0-9_-]*$", password):
+    """
+    Проверка пароля на достаточную надежность
+    """
+    forbidden_symbols = r'[!@#$%^&*()_+=\-\[\]{}|\\:";\'<>,.?/]'
+    if 6 <= len(password) <= 17 and not re.search(forbidden_symbols, password):
         return False
     return True
 
@@ -33,7 +33,8 @@ def check_username(username: str) -> bool:
     Проверка юсернейма на адекватность
     Проверка на допустимые символы (буквы, цифры, дефисы, подчеркивания)
     """
-    if not (3 <= len(username) <= 17 and re.match("^[a-zA-Z0-9_-]*$", username)):
+    forbidden_symbols = r'[!@#$%^&*()+=\-\[\]{}|\\:";\'<>,.?/]'
+    if 3 <= len(username) <= 17 and not re.search(forbidden_symbols, username):
         return False
     return True
 
@@ -143,7 +144,6 @@ async def trade_it(trade_data: Trade_Form, db: AsyncSession = Depends(get_db)):
     Временное сохранение в redis
     """
     time = datetime.now(UTC) + timedelta(minutes=trade_data.time) # Переводим из int в datetime
-    user_name=trade_data.user_name
 
     exchange=trade_data.exchange
     bet_amount=trade_data.bet_amount
@@ -168,62 +168,19 @@ async def trade_it(trade_data: Trade_Form, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(trade)
 
-    result = await db.execute(select(func.max(Trade.id)))
-    trade_id = result.scalar_one_or_none()
-    redis_data = {
-        "bet_amount_X_leverageX": bet_amount*leverageX,
-        "direction": direction,
-        "start_price": start_price,
-    }
-    await redis_client.hmset("trade_data", redis_data)
-    return {"trade_id": trade_id}
-
-@router_users.post("/api/v1/check_trade/")
-async def check_trade(trade_result: Trade_EndResult, db: AsyncSession = Depends(get_db)):
-    """
-    Вычисление выигрыша или проигрыша и загрузка в базу данных
-    """
-    past_data = await redis_client.hgetall("trade_data")
-    past_data = {k.decode("utf-8"): v.decode("utf-8") for k, v in past_data.items()}
-
-    await redis_client.delete("trade_data")
-
-    trade_id = trade_result.trade_id
-    all_bet = float(past_data["bet_amount_X_leverageX"])
-    end_price=trade_result.end_price
-
-    if end_price > float(past_data["start_price"]):
-        if past_data["direction"] == "up":
-            end_trade_result = "W"
-            end_price = all_bet
-        else:
-            end_trade_result = "L"
-            end_price = -all_bet
-    else:
-        if past_data["direction"] == "down":
-            end_trade_result = "W"
-            end_price = all_bet
-        else:
-            end_trade_result = "L"
-            end_price = -all_bet
-
-    result = Trade_Result(
-        trade_id=trade_id,
-        trade_result=end_trade_result,
-        money=end_price,
+    # Фоновая задача
+    process_trade.apply_async(
+        args=[trade.id],
+        countdown=trade_data.time * 60  # Задержка в секундах
     )
-    db.add(result)
-    await db.commit()
-    await db.refresh(result)
+    return {"trade_id": trade.id}
 
-    trade = await db.execute(select(Trade).filter(Trade.id==trade_id))
-    trade = trade.scalar_one_or_none()
-    trade.result = trade_id
-    await db.commit()
-    await db.refresh(trade)
-    if end_trade_result == "W":
-        return {"message": f"WIN +{all_bet}"}
-    return {"message": f"Lose -{all_bet}"}
+@router_users.get("/api/v1/trade_status/{trade_id}")
+async def get_trade_status(trade_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Trade).filter(Trade.id == trade_id))
+    trade = result.scalar_one_or_none()
     
-
-
+    return {
+        "status": trade.status,
+        "result": trade.trade_result
+    }
