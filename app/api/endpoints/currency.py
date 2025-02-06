@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
-from core.security import verify_jwt_token
+from fastapi import APIRouter, HTTPException
 import httpx
 import xml.etree.ElementTree as ET
 from core.security import CMC_API_KEY

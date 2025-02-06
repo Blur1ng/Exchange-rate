@@ -11,6 +11,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 CMC_API_KEY = os.getenv("CMC_API_KEY")
 FIXER_API_KEY = os.getenv("FIXER_API_KEY")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')

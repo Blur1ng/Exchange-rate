@@ -1,6 +1,11 @@
 document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById("tradeForm");
     const resultContainer = document.getElementById("result");
+    const container_peredv = document.getElementById("container-peredv");
+    const container_show1 = document.getElementById("container1-show");
+    const price_show = document.getElementById("price-show");
+    const container_show2 = document.getElementById("container2-show");
+    const current_show = document.getElementById("current-show");
 
     form.addEventListener("submit", async function (e) {
         e.preventDefault();
@@ -47,23 +52,36 @@ document.addEventListener("DOMContentLoaded", function () {
         
             resultContainer.innerText = `Сделка создана! ID: ${result.trade_id}`;
             resultContainer.classList.add("show");
+            
+            //смещение контейнера
+            container_peredv.classList.add("show");  
+            
+            // контейнтейнеры цен
+            price_show.innerText = `${exchange}:  ${start_price.toFixed(2)}$`;
+            container_show1.classList.add("show");
 
             // Функция для проверки статуса
             const checkStatus = async () => {
                 const response = await fetch(`/api/v1/trade_status/${result.trade_id}`);
                 const data = await response.json();
-                
+
                 if (data.status === "completed") {
+                    current_show.innerText = `${exchange}:  ${data.end_price.toFixed(2)}$`;
+                    container_show2.classList.add("show");
                     resultContainer.innerText = data.result === "W" 
                         ? `Победа! +${formData.bet_amount * formData.leverage}$`
                         : `Проигрыш -${formData.bet_amount * formData.leverage}$`;
+
+                } else if (data.status === "failed") {
+                    resultContainer.innerText = `Trade: ${result.trade_id} was failed`
+
                 } else if (data.status === "pending") {
                     setTimeout(checkStatus, 5000); // Проверяем каждые 5 секунд
                 }
             };
-            resultContainer.classList.add("show");
-            checkStatus();
 
+            checkStatus();
+            
         } catch (error) {
             resultContainer.innerText = "Ошибка: " + error.message;
             resultContainer.classList.add("show");

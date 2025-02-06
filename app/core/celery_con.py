@@ -1,5 +1,4 @@
 from celery import Celery
-from sqlalchemy import select
 import requests
 from .database_con import Trade, Trade_Result, sync_session
 

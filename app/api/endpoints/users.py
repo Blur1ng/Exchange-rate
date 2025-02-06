@@ -1,11 +1,12 @@
-from fastapi import APIRouter, HTTPException, Depends, Response, Request
+from fastapi import APIRouter, HTTPException, Depends, Response
 from sqlalchemy.future import select
 from datetime import datetime, timedelta, UTC
 import re
+import httpx
 
 from api.models.users import User_Form
 from webapp.models.trade import Trade_Form
-from core.database_con import async_session, AsyncSession, redis_client, User, Trade, Trade_Result
+from core.database_con import async_session, AsyncSession, redis_client, User, Trade, Account_Data, Trade_Result
 from core.security import pwd_context, create_jwt_token, verify_jwt_token
 
 from core.celery_con import celery, process_trade
@@ -47,13 +48,26 @@ async def register(user: User_Form, db: AsyncSession = Depends(get_db)):
         raise HTTPException(401, "[-] Weak password")
     if check_username(user.username):
         raise HTTPException(401, "[-] Invalid username")
-    
-    hash_password = pwd_context.hash(user.password)
-    user = User(username=user.username, password=hash_password)
-    db.add(user)
-    await db.commit()
-    await db.refresh(user)
-    return {"Registration was successful"}
+    try:
+        hash_password = pwd_context.hash(user.password)
+        user = User(username=user.username, password=hash_password)
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        result = await db.execute(select(User).filter(User.username == user.username))
+        user = result.scalar_one_or_none()
+
+        account = Account_Data(account_id=user.id)
+        db.add(account)
+        await db.commit()
+        await db.refresh(account)
+
+        user.account_id = user.id
+        await db.commit()
+        await db.refresh(user)
+        return {"Registration was successful"}
+    except Exception as e:
+            raise HTTPException(status_code=401, detail="Username already exists")
 
 async def check_for_past_tense(username: str) -> bool:
     """
@@ -141,7 +155,7 @@ async def verify_jwt_token_point(verify: dict = Depends(verify_jwt_token)):
 async def trade_it(trade_data: Trade_Form, db: AsyncSession = Depends(get_db)):
     """
     Сохранения результатов сделки в postgre
-    Временное сохранение в redis
+    Временное сохранение в redis    
     """
     time = datetime.now(UTC) + timedelta(minutes=trade_data.time) # Переводим из int в datetime
 
@@ -177,10 +191,18 @@ async def trade_it(trade_data: Trade_Form, db: AsyncSession = Depends(get_db)):
 
 @router_users.get("/api/v1/trade_status/{trade_id}")
 async def get_trade_status(trade_id: int, db: AsyncSession = Depends(get_db)):
+    end_price = None
+
     result = await db.execute(select(Trade).filter(Trade.id == trade_id))
     trade = result.scalar_one_or_none()
-    
+
+    result2 = await db.execute(select(Trade_Result).filter(Trade_Result.trade_id == trade_id))
+    trade2 = result2.scalar_one_or_none()
+    if trade2:
+        end_price = trade2.end_price
+
     return {
         "status": trade.status,
-        "result": trade.trade_result
+        "result": trade.trade_result,
+        "end_price": end_price,
     }

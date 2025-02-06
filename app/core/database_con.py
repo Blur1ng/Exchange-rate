@@ -2,15 +2,17 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import redis.asyncio as redis
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, create_engine
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Boolean, create_engine
+from .security import DB_PASSWORD
+
 
 
 # Синхронная сессия для Celery
-sinc_engine = create_engine("postgresql+psycopg2://postgres:vjnjh421@localhost/Converter_db")
+sinc_engine = create_engine(f"postgresql+psycopg2://postgres:{DB_PASSWORD}@localhost/Converter_db")
 sync_session = sessionmaker(bind=sinc_engine)
 
 # Асинхронная сессия
-SQLACHEMY_DATABASE_URL = "postgresql+asyncpg://postgres:vjnjh421@localhost/Converter_db"
+SQLACHEMY_DATABASE_URL = f"postgresql+asyncpg://postgres:{DB_PASSWORD}@localhost/Converter_db"
 engine = create_async_engine(SQLACHEMY_DATABASE_URL)
 
 
@@ -50,8 +52,22 @@ class User(Base):
     __tablename__ = "User_data"
     
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, index=True)
+    username = Column(String, index=True, unique=True)
     password = Column(String)
+
+    account_id = Column(Integer, ForeignKey("Account_data.account_id"))
+
+class Account_Data(Base):
+    __tablename__ = "Account_data"
+
+    id = Column(Integer, primary_key=True, index=True)
+    account_id = Column(Integer, index=True, unique=True)
+    balance = Column(Float, index=True, default=0.0)
+    last_enter = Column(DateTime)
+    status = Column(String, index=True, default="Offline") #Online/Offline
+    email = Column(String(100), unique=True, index=True)
+    is_verified = Column(Boolean, default=False)  
+
     
 
 # redis

@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     try {
         const response = await fetch("/api/v1/verify_jwt_token", {
             method: "GET",
-            credentials: "include", // Убедитесь, что куки передаются
+            credentials: "include",
         });
 
         if (!response.ok) {
