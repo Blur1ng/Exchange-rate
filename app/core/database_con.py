@@ -64,7 +64,7 @@ class Account_Data(Base):
     account_id = Column(Integer, index=True, unique=True)
     balance = Column(Float, index=True, default=0.0)
     last_enter = Column(DateTime)
-    status = Column(String, index=True, default="Offline") #Online/Offline
+    status = Column(String, index=True, default="Offline")
     email = Column(String(100), unique=True, index=True)
     is_verified = Column(Boolean, default=False)  
 
@@ -72,3 +72,8 @@ class Account_Data(Base):
 
 # redis
 redis_client = redis.from_url("redis://localhost:6379", db=0)
+
+async def get_db():
+        # Сессия с бд
+        async with async_session() as db:
+            yield db

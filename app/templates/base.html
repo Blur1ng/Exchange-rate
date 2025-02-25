@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{{ url_for('static', path='/images/favicon.ico') }}" type="image/x-icon">
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/navbar.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand" style="text-shadow: 0px 0px 10px rgb(0, 0, 0);">
+            <a href="/" class="brand-link">NENAEBALOVO.RU</a>
+        </div>
+        
+        <ul class="navbar-nav" style="gap: 15rem;">
+            <li><a href="/" class="nav-link">Главная</a></li>
+            {% if token %}
+                <li><a href="/trade" class="nav-link">Торговля</a></li>
+            {% endif %}
+            <li><a href="/about" class="nav-link">О нас</a></li>
+        </ul>
+    
+        <ul class="navbar-nav">
+            {% if token %}
+                <li><a href="/account" class="nav-link">Профиль</a></li>
+            {% else %}
+                <li><a href="/login" class="nav-link">Войти</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

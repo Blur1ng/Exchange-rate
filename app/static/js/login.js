@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok) {
                 const data = await response.json();
-                window.location.href = '/trade';  // Перенаправление на главную страницу
+                window.location.href = '/';
             } else {
                 const errorData = await response.json();
                 if (errorMessage) {

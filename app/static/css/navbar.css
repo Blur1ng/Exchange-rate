@@ -1,0 +1,73 @@
+/* Навбар */
+.navbar {
+    background-color: #1e1e1e; /* Тёмный фон */
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Тень */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000; /* Чтобы навбар был поверх других элементов */
+}
+
+.navbar-brand .brand-link {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #00ff88; /* Акцентный цвет */
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* Список ссылок */
+.navbar-nav {
+    list-style: none;
+    display: flex;
+    gap: 1.5rem;
+    margin: 0;
+    padding: 0;
+}
+
+/* Ссылки */
+.nav-link {
+    color: #ffffff; /* Белый цвет текста */
+    text-decoration: none;
+    font-size: 1.3rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Эффекты при наведении */
+.nav-link:hover {
+    background-color: rgba(0, 255, 136, 0.1); /* Лёгкий акцентный оттенок */
+    color: #00ff88; /* Акцентный цвет */
+}
+
+/* Активная ссылка */
+.nav-link.active {
+    background-color: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+}
+
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        padding: 1rem;
+    }
+
+    .navbar-nav {
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .nav-link {
+        padding: 0.5rem;
+        text-align: center;
+    }
+}

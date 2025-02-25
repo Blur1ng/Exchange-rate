@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --accent: #00ff88;
+        --dark: #1e1e1e;
+        --darker: #121212;
+    }
+    body {
+        background-color: var(--darker);
+        color: white;
+        font-family: 'Arial', sans-serif;
+        margin: 0;
+        line-height: 1.6;
+    }
+    /* Герой-секция */
+    .hero {
+        padding: 8rem 2rem;
+        text-align: center;
+        background: linear-gradient(45deg, var(--dark), var(--darker));
+    }
+    .hero h1 {
+        font-size: 3.5rem;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(to right, var(--accent), #00cc66);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    /* Секция шагов */
+    .steps {
+        padding: 4rem 2rem;
+        background-color: var(--dark);
+    }
+    .step-card {
+        background: var(--darker);
+        padding: 2rem;
+        border-radius: 15px;
+        margin: 1rem;
+        transition: transform 0.3s ease;
+        max-width: 300px;
+    }
+    .step-card:hover {
+        transform: translateY(-10px);
+    }
+    .step-number {
+        width: 50px;
+        height: 50px;
+        background: var(--accent);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: var(--dark);
+        margin-bottom: 1rem;
+    }
+    /* Сетка */
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 3rem;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    /* Кнопки */
+    .cta-button {
+        background: var(--accent);
+        color: var(--dark);
+        padding: 1rem 2rem;
+        border-radius: 30px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        display: inline-block;
+        margin: 1rem;
+    }
+    .cta-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 15px var(--accent);
+    }
+    /* Адаптивность */
+    @media (max-width: 768px) {
+        .hero h1 {
+            font-size: 2.5rem;
+        }
+    }
+    /* Секция преимуществ */
+    .features {
+        padding: 6rem 2rem;
+        background: var(--dark);
+    }
+
+    .features .container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .features h2 {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 4rem;
+        color: var(--accent);
+    }
+
+    .feature-card {
+        background: var(--darker);
+        padding: 2rem;
+        border-radius: 15px;
+        text-align: center;
+        transition: transform 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .feature-card:hover {
+        transform: translateY(-10px);
+        border-color: var(--accent);
+    }
+
+    .feature-card img {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 1.5rem;
+        filter: invert(0.8);
+        transition: filter 0.3s ease;
+    }
+
+    .feature-card:hover img {
+        filter: invert(0.9) sepia(1) hue-rotate(80deg) saturate(5);
+    }
+
+    .feature-card h4 {
+        color: var(--accent);
+        margin: 1rem 0;
+        font-size: 1.4rem;
+    }
+
+    .feature-card p {
+        color: #cccccc;
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    /* Адаптивность для преимуществ */
+    @media (max-width: 768px) {
+        .features {
+            padding: 3rem 1rem;
+        }
+
+        .features h2 {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .feature-card {
+            margin: 1rem 0;
+            padding: 1.5rem;
+        }
+    }
+</style>
+
+<body>
+    <!-- Герой-секция -->
+    <section class="hero">
+        <div class="container">
+            <h1>Торгуйте криптовалютой с умом</h1>
+            <p>Делайте прогнозы, ставьте и получайте прибыль на изменении курсов</p>
+            {% if token %}
+                <a href="/trade" class="cta-button">Начать торговлю</a>
+            {% else %}
+                <a href="/login" class="cta-button">Начать торговлю</a>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Как это работает -->
+    <section class="steps">
+        <div class="grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3>Выбирайте актив</h3>
+                <p>BTC, ETH, SOL и другие популярные криптовалюты</p>
+                <p>Монеты</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3>Делайте ставку</h3>
+                <p>Выбирайте направление (LONG/SHORT) и срок экспирации</p>
+                <p>Торговля</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3>Получайте результат</h3>
+                <p>Фиксируйте прибыль при правильном прогнозе</p>
+                <p>Прибыль</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Преимущества -->
+    <section class="features">
+        <div class="container">
+            <h2>Почему выбирают нас?</h2>
+            <div class="grid">
+                <div class="feature-card">
+                    <p>Безопасность</p>
+                    <h4>Максимальная безопасность</h4>
+                    <p>Все транзакции защищены банковским уровнем шифрования, средства хранятся в холодных кошельках</p>
+                </div>
+                
+                <div class="feature-card">
+                    <p>Плечо</p>
+                    <h4>Плечо до 100x</h4>
+                    <p>Увеличивайте свою потенциальную прибыль с помощью кредитного плеча</p>
+                </div>
+                
+                <div class="feature-card">
+                    <p>Поддержка</p>
+                    <h4>Круглосуточная поддержка</h4>
+                    <p>Наша команда поддержки всегда готова помочь на русском и английском языках</p>
+                </div>
+                
+                <div class="feature-card">
+                    <p>Мобильность</p>
+                    <h4>Мобильная версия</h4>
+                    <p>Торгуйте с любого устройства через адаптивный интерфейс</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+{% endblock %}

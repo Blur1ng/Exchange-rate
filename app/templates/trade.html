@@ -1,186 +1,167 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Торговля</title>
-    <style>
-        /* Основные стили */
-        body {
-            background-color: #121212;
-            color: #ffffff;
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
+{% extends "base.html" %}
 
-        @keyframes container-color {
-            0%   {left:0; top:0px;}
-            20%  {background-color:rgba(139, 139, 139, 0.67);box-shadow: 0 4px 10px rgba(139, 139, 139, 0.67);}
-        }
+{% block title %}{{ title }}{% endblock %}
 
-        .container {
-            position: relative;
-            background-color: #1e1e1e;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-            width: 100%;
-            max-width: 400px;
-            animation-name: container-color;
-            animation-duration: 1s;
-            transform: translateX(0px);
-            transition:  transform 2s ease;
-        }
-        .container.show {
-            transform: translateX(-400px);
-        }        
-
-        .title {
-            text-align: center;
-            margin-bottom: 1.5rem;
-            font-size: 1.8rem;
-            color: #00ff88;
-        }
-
-        /* Форма */
-        .trade-form {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-            color: #cccccc;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #333;
-            border-radius: 5px;
-            background-color: #2c2c2c;
-            color: #ffffff;
-            font-size: 1rem;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #00ff88;
-        }
-
-        /* Кнопка */
-        .submit-button {
-            background-color: #00ff88;
-            color: #121212;
-            border: none;
-            padding: 0.75rem;
-            border-radius: 5px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .submit-button:hover {
-            background-color: #00cc66;
-        }
-
-        .result-container {
-            margin-top: 1.5rem;
-            padding: 1rem;
-            background-color: #2c2c2c;
-            border-radius: 5px;
-            text-align: center;
-            font-size: 1rem;
-            color: #ffffff;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.5s ease, transform 0.5s ease;
-        }
-
-        .result-container.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
+{% block content %}
+<style>
+    /* Основные стили */
+    body {
+        background-color: #121212;
+        color: #ffffff;
+        font-family: 'Arial', sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+    @keyframes container-color {
+        0%   {left:0; top:0px;}
+        20%  {background-color:rgba(139, 139, 139, 0.67);box-shadow: 0 4px 10px rgba(139, 139, 139, 0.67);}
+    }
+    .container {
+        position: relative;
+        background-color: #1e1e1e;
+        padding: 4rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        width: 100%;
+        max-width: 400px;
+        animation-name: container-color;
+        animation-duration: 1s;
+        transform: translateX(0px);
+        transition:  transform 2s ease;
+    }
+    .container.show {
+        transform: translateX(-400px);
+    }        
+    .title {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        font-size: 1.8rem;
+        color: #00ff88;
+    }
+    /* Форма */
+    .trade-form {
+        display: flex;
+        flex-direction: column;
+    }
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        color: #cccccc;
+    }
+    .form-input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #333;
+        border-radius: 5px;
+        background-color: #2c2c2c;
+        color: #ffffff;
+        font-size: 1rem;
+    }
+    .form-input:focus {
+        outline: none;
+        border-color: #00ff88;
+    }
+    /* Кнопка */
+    .submit-button {
+        background-color: #00ff88;
+        color: #121212;
+        border: none;
+        padding: 0.75rem;
+        border-radius: 5px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    .submit-button:hover {
+        background-color: #00cc66;
+    }
+    .result-container {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background-color: #2c2c2c;
+        border-radius: 5px;
+        text-align: center;
+        font-size: 1rem;
+        color: #ffffff;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .result-container.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .price-container {
+        position: absolute;
+        left: 50%;
+        bottom: 75%;
+        padding: 2rem;
+        min-width: 200px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        background-color: #1e1e1e;
+        border-radius: 5px;
+        text-align: center;
+        font-size: 15pt;
+        color: #ffffff;
+        opacity: 0;
+        transform: translateY(-30px);
+        transition: opacity 2.5s ease, transform 1s ease;
+        animation-name: container-color;
+        animation-duration: 1s;
+        z-index: 1000;
+    }
+    .price-container.show {
+        transform: translateY(0px);
+        opacity: 1;
+    }
+    .current-container {
+        position: absolute;
+        left: 75%;
+        bottom: 75%;
+        padding: 2rem;
+        min-width: 200px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        background-color: #1e1e1e;
+        border-radius: 5px;
+        text-align: center;
+        font-size: 15pt;
+        color: #ffffff;
+        opacity: 0;
+        transform: translateY(-30px);
+        transition: opacity 2.5s ease, transform 1s ease;
+        animation-name: container-color;
+        animation-duration: 1s;
+        z-index: 1000;
+    }
+    .current-container.show {
+        transform: translateY(0px);
+        opacity: 1;
+    }
+    .buy-container {
+        position: absolute;
+        top: -15px;
+        left: -15px;
         
-        .price-container {
-            position: absolute;
-            left: 50%;
-            bottom: 75%;
-            padding: 2rem;
-            min-width: 200px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-            background-color: #1e1e1e;
-            border-radius: 5px;
-            text-align: center;
-            font-size: 15pt;
-            color: #ffffff;
-            opacity: 0;
-            transform: translateY(-30px);
-            transition: opacity 2.5s ease, transform 1s ease;
-            animation-name: container-color;
-            animation-duration: 1s;
-            z-index: 1000;
-        }
+        font-size: 12pt;
+        color:rgb(101, 101, 101);
+        font-weight: bold;
+        text-transform: uppercase;
+        border-radius: 3px;
+        background: rgba(30, 30, 30, 0.9);
+        padding: 4px 8px;
+        border-radius: 3px;
+    }
+</style>
 
-        .price-container.show {
-            transform: translateY(0px);
-            opacity: 1;
-        }
-
-        .current-container {
-            position: absolute;
-            left: 75%;
-            bottom: 75%;
-            padding: 2rem;
-            min-width: 200px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-            background-color: #1e1e1e;
-            border-radius: 5px;
-            text-align: center;
-            font-size: 15pt;
-            color: #ffffff;
-            opacity: 0;
-            transform: translateY(-30px);
-            transition: opacity 2.5s ease, transform 1s ease;
-            animation-name: container-color;
-            animation-duration: 1s;
-            z-index: 1000;
-        }
-
-        .current-container.show {
-            transform: translateY(0px);
-            opacity: 1;
-        }
-
-        .buy-container {
-            position: absolute;
-            top: -15px;
-            left: -15px;
-            
-            font-size: 12pt;
-            color:rgb(101, 101, 101);
-            font-weight: bold;
-            text-transform: uppercase;
-
-            border-radius: 3px;
-            background: rgba(30, 30, 30, 0.9);
-            padding: 4px 8px;
-            border-radius: 3px;
-        }
-
-    </style>
-</head>
 <body>
 
     <div id="container1-show" class="price-container">
@@ -243,7 +224,7 @@
 
         <div id="result" class="result-container"></div>
     </div>
-    <script src="/static/js/trade.js"></script>
+    <script src="/static/js/check_token.js"></script>
     <script src="/static/js/trade_front.js"></script>
 </body>
-</html>
+{% endblock %}

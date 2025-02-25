@@ -1,61 +1,36 @@
 from fastapi import APIRouter, HTTPException, Depends, Response
-from sqlalchemy.future import select
 from datetime import datetime, timedelta, UTC
-import re
-import httpx
 
 from api.models.users import User_Form
 from webapp.models.trade import Trade_Form
-from core.database_con import async_session, AsyncSession, redis_client, User, Trade, Account_Data, Trade_Result
+from core.database_con import  AsyncSession, redis_client, User, Trade, Account_Data, Trade_Result, get_db
 from core.security import pwd_context, create_jwt_token, verify_jwt_token
 
 from core.celery_con import celery, process_trade
+
+from api.classes.clsss import GetData, UserEnterData, UserData
 
 router_users = APIRouter()
 
 TOKEN_LIFE_TIME = 30 #minutes
 
-async def get_db():
-    # Сессия с бд
-    async with async_session() as db:
-        yield db
-
-def check_password(password: str) -> bool:
-    """
-    Проверка пароля на достаточную надежность
-    """
-    forbidden_symbols = r'[!@#$%^&*()_+=\-\[\]{}|\\:";\'<>,.?/]'
-    if 6 <= len(password) <= 17 and not re.search(forbidden_symbols, password):
-        return False
-    return True
-
-def check_username(username: str) -> bool:
-    """
-    Проверка юсернейма на адекватность
-    Проверка на допустимые символы (буквы, цифры, дефисы, подчеркивания)
-    """
-    forbidden_symbols = r'[!@#$%^&*()+=\-\[\]{}|\\:";\'<>,.?/]'
-    if 3 <= len(username) <= 17 and not re.search(forbidden_symbols, username):
-        return False
-    return True
-
 @router_users.post("/api/v1/auth/register/")
-async def register(user: User_Form, db: AsyncSession = Depends(get_db)):
+async def register(enter_data: User_Form, db: AsyncSession = Depends(get_db)):
     """
     Регистрация пользователя и проверка вводимых данных
     """
-    if check_password(user.password):
+    user = UserEnterData(enter_data)
+    if user.check_password():
         raise HTTPException(401, "[-] Weak password")
-    if check_username(user.username):
+    if user.check_username():
         raise HTTPException(401, "[-] Invalid username")
     try:
-        hash_password = pwd_context.hash(user.password)
-        user = User(username=user.username, password=hash_password)
+        hash_password = pwd_context.hash(enter_data.password)
+        user = User(username=enter_data.username, password=hash_password)
         db.add(user)
         await db.commit()
         await db.refresh(user)
-        result = await db.execute(select(User).filter(User.username == user.username))
-        user = result.scalar_one_or_none()
+        user = await GetData(db, User).from_username(user.username)
 
         account = Account_Data(account_id=user.id)
         db.add(account)
@@ -120,8 +95,7 @@ async def login(user_data: User_Form, response: Response, db: AsyncSession = Dep
     Вызывается функция анти_подбора_паролей() (anti_password_selection_system())
     """
     username = user_data.username
-    result = await db.execute(select(User).filter(User.username == username))
-    user = result.scalar_one_or_none()
+    user = await GetData(db, User).from_username(username)
 
     if await check_for_past_tense(username) and user and pwd_context.verify(user_data.password, user.password):
         # Время жизни токена
@@ -146,9 +120,6 @@ async def login(user_data: User_Form, response: Response, db: AsyncSession = Dep
 
 @router_users.get("/api/v1/verify_jwt_token/")
 async def verify_jwt_token_point(verify: dict = Depends(verify_jwt_token)):
-    """
-    Верификация JWT токена и получение id User'а
-    """
     return {"user_name": verify}
 
 @router_users.post("/api/v1/trade_it/")
@@ -167,8 +138,10 @@ async def trade_it(trade_data: Trade_Form, db: AsyncSession = Depends(get_db)):
     start_price=trade_data.start_price
     user_name=trade_data.user_name
 
-    result=await db.execute(select(User).filter(User.username==user_name))
-    user_id=result.scalar_one_or_none().id
+
+    user = await GetData(db, User).from_username(user_name)
+    user_id = user.id
+
     trade = Trade(
         exchange=exchange,
         bet_amount=bet_amount,
@@ -193,16 +166,17 @@ async def trade_it(trade_data: Trade_Form, db: AsyncSession = Depends(get_db)):
 async def get_trade_status(trade_id: int, db: AsyncSession = Depends(get_db)):
     end_price = None
 
-    result = await db.execute(select(Trade).filter(Trade.id == trade_id))
-    trade = result.scalar_one_or_none()
+    trade = await GetData(db, Trade).from_id(trade_id)
+    trade_result = await GetData(db, Trade_Result).from_trade_id(id=trade_id)
 
-    result2 = await db.execute(select(Trade_Result).filter(Trade_Result.trade_id == trade_id))
-    trade2 = result2.scalar_one_or_none()
-    if trade2:
-        end_price = trade2.end_price
-
+    if trade_result is not None:
+        end_price = trade_result.end_price
+        user = await GetData(db, User).from_id(trade.user_id)
+        await UserData(db, user).update_balance(trade_result.money)
+        
     return {
         "status": trade.status,
         "result": trade.trade_result,
         "end_price": end_price,
     }
+

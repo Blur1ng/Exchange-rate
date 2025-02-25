@@ -66,7 +66,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 const data = await response.json();
 
                 if (data.status === "completed") {
-                    current_show.innerText = `${exchange}:  ${data.end_price.toFixed(2)}$`;
+                    current_show.innerText = `${exchange}:  ${data.end_price.toFixed(4)}$`;
                     container_show2.classList.add("show");
                     resultContainer.innerText = data.result === "W" 
                         ? `Победа! +${formData.bet_amount * formData.leverage}$`
