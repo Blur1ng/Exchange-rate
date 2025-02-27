@@ -3,16 +3,16 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import redis.asyncio as redis
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Boolean, create_engine
-from .security import DB_PASSWORD
+from .security import DB_PASSWORD, POSTGRES_DB, POSTGRES_USER
 
 
 
 # Синхронная сессия для Celery
-sinc_engine = create_engine(f"postgresql+psycopg2://postgres:{DB_PASSWORD}@localhost/Converter_db")
+sinc_engine = create_engine(f"postgresql+psycopg2://{POSTGRES_USER}:{DB_PASSWORD}@db:5432/{POSTGRES_DB}")
 sync_session = sessionmaker(bind=sinc_engine)
 
 # Асинхронная сессия
-SQLACHEMY_DATABASE_URL = f"postgresql+asyncpg://postgres:{DB_PASSWORD}@localhost/Converter_db"
+SQLACHEMY_DATABASE_URL = f"postgresql+asyncpg://{POSTGRES_USER}:{DB_PASSWORD}@db:5432/{POSTGRES_DB}"
 engine = create_async_engine(SQLACHEMY_DATABASE_URL)
 
 
@@ -71,7 +71,7 @@ class Account_Data(Base):
     
 
 # redis
-redis_client = redis.from_url("redis://localhost:6379", db=0)
+redis_client = redis.from_url(f"redis://redis:6379", db=0)
 
 async def get_db():
         # Сессия с бд

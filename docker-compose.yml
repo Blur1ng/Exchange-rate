@@ -1,0 +1,60 @@
+
+services:
+  alembic:
+    build: .
+    command: alembic upgrade head
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    env_file:
+      - .env
+
+  fastapi:
+    build: .
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    env_file:
+      - .env
+  
+  celery:
+    build: .
+    command: celery -A app.core.celery_con worker --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - db
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    env_file:
+      - .env
+
+  redis:
+    image: "redis:latest"
+    ports:
+      - "6379:6379"
+
+  db:
+    image: "postgres:latest"
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

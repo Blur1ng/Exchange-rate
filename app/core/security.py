@@ -12,6 +12,9 @@ ALGORITHM = os.getenv("ALGORITHM")
 CMC_API_KEY = os.getenv("CMC_API_KEY")
 FIXER_API_KEY = os.getenv("FIXER_API_KEY")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
+POSTGRES_USER = os.getenv("DB_USER")
+POSTGRES_PASSWORD = os.getenv("DB_PASSWORD")
+POSTGRES_DB = os.getenv("DB_NAME")
 
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')

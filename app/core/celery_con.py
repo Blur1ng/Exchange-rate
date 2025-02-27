@@ -1,12 +1,14 @@
 from celery import Celery
 import requests
 from .database_con import Trade, Trade_Result, sync_session
+from .path import apipath
+
 
 
 celery = Celery(
     "tasks",
-    broker="redis://localhost:6379/0",
-    backend="redis://localhost:6379/1"
+    broker=f"redis://redis:6379/0",
+    backend=f"redis://redis:6379/1"
 )
 celery.conf.update(
     broker_connection_retry_on_startup=True
@@ -25,7 +27,7 @@ def process_trade(trade_id: int):
 
         try:
             # Обращаемся к api и узнаем текущий курс
-            response = requests.get(f"http://localhost:8000/api/v1/rate/coin/{trade.exchange}/")
+            response = requests.get(f"{apipath}/api/v1/rate/coin/{trade.exchange}/")
             data = response.json()
             end_price = data[f"{trade.exchange}USDT"]
 

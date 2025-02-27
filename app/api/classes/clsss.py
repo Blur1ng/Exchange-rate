@@ -1,9 +1,10 @@
 from fastapi import HTTPException
-from core.database_con import User, Account_Data, AsyncSession
-from api.models.users import User_Form
+from app.core.database_con import User, Account_Data, AsyncSession
+from app.api.models.users import User_Form
 from sqlalchemy.future import select
 import re
 import httpx
+from app.core.path import apipath
 
 class UserEnterData:
     def __init__(self, user: User_Form):
@@ -79,14 +80,14 @@ class GetData:
             result = await self.db.execute(select(table).filter(table.username==username))
             user = result.scalar_one_or_none()
             return user
-        except Exception as e:
+        except Exception as e: 
             print(f"ERROR: {username} is not a 'user_name' ")
 
     async def from_token(self, token):
         try:
             async with httpx.AsyncClient() as client:
                 cookies = {"access_token": token}
-                response = await client.get("http://127.0.0.1:8000/api/v1/verify_jwt_token/", cookies=cookies)
+                response = await client.get(f"{apipath}/api/v1/verify_jwt_token/", cookies=cookies)
             username = response.json()
             if 'detail' in username:
                 return "no token"

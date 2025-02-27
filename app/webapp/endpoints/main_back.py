@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
-from core.security import get_jwt_from_cookie
-from api.classes.clsss import GetData
-from core.database_con import AsyncSession, User, Account_Data, get_db
+from app.core.security import get_jwt_from_cookie
+from app.api.classes.clsss import GetData
+from app.core.database_con import AsyncSession, User, Account_Data, get_db
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 templates = Jinja2Templates("app/templates")

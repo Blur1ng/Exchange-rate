@@ -1,14 +1,14 @@
 from fastapi import APIRouter, HTTPException, Depends, Response
 from datetime import datetime, timedelta, UTC
 
-from api.models.users import User_Form
-from webapp.models.trade import Trade_Form
-from core.database_con import  AsyncSession, redis_client, User, Trade, Account_Data, Trade_Result, get_db
-from core.security import pwd_context, create_jwt_token, verify_jwt_token
+from app.api.models.users import User_Form
+from app.webapp.models.trade import Trade_Form
+from app.core.database_con import  AsyncSession, redis_client, User, Trade, Account_Data, Trade_Result, get_db
+from app.core.security import pwd_context, create_jwt_token, verify_jwt_token
 
-from core.celery_con import celery, process_trade
+from app.core.celery_con import celery, process_trade
 
-from api.classes.clsss import GetData, UserEnterData, UserData
+from app.api.classes.clsss import GetData, UserEnterData, UserData
 
 router_users = APIRouter()
 

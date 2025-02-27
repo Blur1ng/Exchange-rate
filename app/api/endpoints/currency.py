@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 import httpx
 import xml.etree.ElementTree as ET
-from core.security import CMC_API_KEY
+from app.core.security import CMC_API_KEY
 
 
 router_rate = APIRouter()
@@ -32,22 +32,3 @@ async def get_crypto_price(coin_ticket: str):
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {exc if exc else "Try in a few seconds"}")
 
-@router_rate.get("/api/v1/rate/rub_to/{exchange}")
-async def get_rub_usd_rate(exchange: str):
-    url = 'https://www.cbr.ru/scripts/XML_daily.asp'
-    
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url)
-
-    if response.status_code == 200:
-        data = response.text
-        root = ET.fromstring(data)
-
-        exchange = exchange.upper()
-        for child in root.findall(".//Valute"):
-            if child.find("CharCode").text == exchange:
-                rate = child.find("Value").text
-                return {exchange: rate}
-        raise HTTPException(status_code=404, detail=f"Currency {exchange} not found.")
-    else:
-        raise HTTPException(status_code=500, detail="Failed to fetch data from Central Bank API")

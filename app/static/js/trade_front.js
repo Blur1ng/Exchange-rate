@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", function () {
             container_peredv.classList.add("show");  
             
             // контейнтейнеры цен
-            price_show.innerText = `${exchange}:  ${start_price.toFixed(2)}$`;
+            price_show.innerText = `${exchange}:  ${start_price.toFixed(4)}$`;
             container_show1.classList.add("show");
 
             // Функция для проверки статуса
