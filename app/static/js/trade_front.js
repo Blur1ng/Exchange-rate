@@ -61,26 +61,37 @@ document.addEventListener("DOMContentLoaded", function () {
             container_show1.classList.add("show");
 
             // Функция для проверки статуса
-            const checkStatus = async () => {
-                const response = await fetch(`/api/v1/trade_status/${result.trade_id}`);
-                const data = await response.json();
-
-                if (data.status === "completed") {
-                    current_show.innerText = `${exchange}:  ${data.end_price.toFixed(4)}$`;
-                    container_show2.classList.add("show");
-                    resultContainer.innerText = data.result === "W" 
-                        ? `Победа! +${formData.bet_amount * formData.leverage}$`
-                        : `Проигрыш -${formData.bet_amount * formData.leverage}$`;
-
-                } else if (data.status === "failed") {
-                    resultContainer.innerText = `Trade: ${result.trade_id} was failed`
-
-                } else if (data.status === "pending") {
-                    setTimeout(checkStatus, 5000); // Проверяем каждые 5 секунд
-                }
-            };
-
-            checkStatus();
+            function connectWebSocket(tradeId) {
+                const ws = new WebSocket(`ws://${window.location.host}/api/v1/ws/trade_status/${tradeId}`);
+            
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    console.log("Received data:", event.data);
+                    
+                    if (data.error) {
+                        console.error('WebSocket error:', data.error);
+                        return;
+                    }
+            
+                    if (data.status === "completed") {
+                        current_show.innerText = `${exchange}:  ${data.end_price.toFixed(4)}$`;
+                        container_show2.classList.add("show");
+                        resultContainer.innerText = data.result === "W" 
+                            ? `Победа! +${formData.bet_amount * formData.leverage}$`
+                            : `Проигрыш -${formData.bet_amount * formData.leverage}$`;
+                    } 
+                    else if (data.status === "failed") {
+                        resultContainer.innerText = `Trade: ${tradeId} was failed`;
+                    }
+                };
+            
+                ws.onclose = (event) => {
+                    if (!event.wasClean) {
+                        setTimeout(() => connectWebSocket(tradeId), 5000);
+                    }
+                };
+            }         
+            connectWebSocket(result.trade_id);
             
         } catch (error) {
             resultContainer.innerText = "Ошибка: " + error.message;

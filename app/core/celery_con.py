@@ -45,11 +45,14 @@ def process_trade(trade_id: int):
             )      
             session.add(trade_result)
             session.commit()
+            session.refresh(trade_result)
 
             trade.status = "completed"
-            trade.trade_result=result,
+            trade.trade_result=result
             trade.result=trade.id
             session.commit()
+            session.begin()
+            session.refresh(trade)
 
             return {"status": "completed", "result": result}
 

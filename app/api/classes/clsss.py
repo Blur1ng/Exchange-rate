@@ -97,7 +97,6 @@ class GetData:
         except Exception as e:
             return HTTPException(status_code=401, detail="Токен не найден", headers={"WWW-Authenticate": "Bearer"})
 
-
 class UserData:
     def __init__(self, db: AsyncSession, user: User):
         self.db = db

@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Depends, Response
+from fastapi import APIRouter, HTTPException, Depends, Response, logger
+from fastapi import WebSocket, WebSocketDisconnect
 from datetime import datetime, timedelta, UTC
 
 from app.api.models.users import User_Form
@@ -9,6 +10,9 @@ from app.core.security import pwd_context, create_jwt_token, verify_jwt_token
 from app.core.celery_con import celery, process_trade
 
 from app.api.classes.clsss import GetData, UserEnterData, UserData
+
+import asyncio
+
 
 router_users = APIRouter()
 
@@ -162,21 +166,42 @@ async def trade_it(trade_data: Trade_Form, db: AsyncSession = Depends(get_db)):
     )
     return {"trade_id": trade.id}
 
-@router_users.get("/api/v1/trade_status/{trade_id}")
-async def get_trade_status(trade_id: int, db: AsyncSession = Depends(get_db)):
-    end_price = None
+@router_users.websocket("/api/v1/ws/trade_status/{trade_id}")
+async def websocket_trade_status(websocket: WebSocket, trade_id: int, db: AsyncSession = Depends(get_db)):
+    await websocket.accept()
+    
+    try:
+        while True:
+            # Используем отдельную сессию для каждого запроса
+            async with db.begin():
+                trade = await GetData(db, Trade).from_id(trade_id)
+                
+                if not trade:
+                    await websocket.send_json({"error": "Trade not found"})
+                    break
+                
+                # Принудительно обновляем данные
+                await db.refresh(trade)
+                
+                if trade.status != "pending":
+                    trade_result = await GetData(db, Trade_Result).from_trade_id(trade_id)
+                    
+                    response = {
+                        "status": trade.status,
+                        "result": trade.trade_result,
+                        "end_price": trade_result.end_price if trade_result else None,
+                        "timestamp": datetime.now().isoformat()
+                    }
+                    
+                    await websocket.send_json(response)
+                    await UserData(db, trade.user).update_balance(trade_result.money)
+                    await websocket.close()
+                    break
 
-    trade = await GetData(db, Trade).from_id(trade_id)
-    trade_result = await GetData(db, Trade_Result).from_trade_id(id=trade_id)
-
-    if trade_result is not None:
-        end_price = trade_result.end_price
-        user = await GetData(db, User).from_id(trade.user_id)
-        await UserData(db, user).update_balance(trade_result.money)
-        
-    return {
-        "status": trade.status,
-        "result": trade.trade_result,
-        "end_price": end_price,
-    }
-
+            await asyncio.sleep(3)  # Уменьшенный интервал проверки
+            
+    except WebSocketDisconnect:
+        await websocket.close()
+    except Exception as e:
+        await websocket.send_json({"error": str(e)})
+        await websocket.close()

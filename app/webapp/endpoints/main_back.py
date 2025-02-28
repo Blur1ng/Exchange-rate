@@ -24,6 +24,10 @@ async def register(request: Request, token: str = Depends(get_jwt_from_cookie)):
 async def trade(request: Request, token: str = Depends(get_jwt_from_cookie)):
     return templates.TemplateResponse("trade.html", {"request": request, "title": "Trade", "token": token})
 
+@router_main_back.get("/sooooon")
+async def roulette(request: Request, token: str = Depends(get_jwt_from_cookie)):
+    return templates.TemplateResponse("roulette.html", {"request": request, "title": "SOOOOON", "token": token})
+
 @router_main_back.get("/account")
 async def trade(request: Request, token: str = Depends(get_jwt_from_cookie), db: AsyncSession = Depends(get_db)):
     user = await GetData(db, User).from_token(token)
