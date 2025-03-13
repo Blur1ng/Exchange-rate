@@ -4,6 +4,7 @@ from app.api.classes.clsss import GetData
 from app.core.database_con import AsyncSession, User, Account_Data, get_db
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
+import logging
 templates = Jinja2Templates("app/templates")
 
 router_main_back = APIRouter()
@@ -24,15 +25,15 @@ async def register(request: Request, token: str = Depends(get_jwt_from_cookie)):
 async def trade(request: Request, token: str = Depends(get_jwt_from_cookie)):
     return templates.TemplateResponse("trade.html", {"request": request, "title": "Trade", "token": token})
 
-@router_main_back.get("/sooooon")
+@router_main_back.get("/rocket")
 async def roulette(request: Request, token: str = Depends(get_jwt_from_cookie)):
-    return templates.TemplateResponse("roulette.html", {"request": request, "title": "SOOOOON", "token": token})
+    return templates.TemplateResponse("rocket.html", {"request": request, "title": "Rocket", "token": token})
 
 @router_main_back.get("/account")
-async def trade(request: Request, token: str = Depends(get_jwt_from_cookie), db: AsyncSession = Depends(get_db)):
+async def trade(request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(get_jwt_from_cookie)):
     user = await GetData(db, User).from_token(token)
     if user == "no token":
-            return RedirectResponse(url="/")
+        return RedirectResponse(url="/")
     username = user.username
     account = await GetData(db, Account_Data).from_account_id(user.account_id)
     balance = account.balance
@@ -40,9 +41,9 @@ async def trade(request: Request, token: str = Depends(get_jwt_from_cookie), db:
     is_verified = account.is_verified
 
     return templates.TemplateResponse("account.html", {
+        "token": token,
         "request": request, 
         "title": "Account", 
-        "token": token,
         "username": username,
         "balance": balance,
         "email": user_email,

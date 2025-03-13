@@ -68,6 +68,19 @@ class Account_Data(Base):
     email = Column(String(100), unique=True, index=True)
     is_verified = Column(Boolean, default=False)  
 
+class Rocket(Base):
+    __tablename__ = "Rocket"
+
+    id = Column(Integer, primary_key=True, index=True)
+    start_bet = Column(Float, index=True)
+    end_bet = Column(Float, index=True)
+    uspel = Column(Boolean, index=True)
+    zabrannyyX = Column(Float, index=True)
+    time_take_profit = Column(DateTime)
+    time_uspel = Column(DateTime)
+    
+
+    user_id = Column(Integer, ForeignKey("User_data.id"))
     
 
 # redis

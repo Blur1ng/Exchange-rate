@@ -1,22 +1,24 @@
-from fastapi import APIRouter, HTTPException, Depends, Response, logger
+from fastapi import APIRouter, HTTPException, Depends, Response
 from fastapi import WebSocket, WebSocketDisconnect
 from datetime import datetime, timedelta, UTC
+
+from fastapi.responses import RedirectResponse
 
 from app.api.models.users import User_Form
 from app.webapp.models.trade import Trade_Form
 from app.core.database_con import  AsyncSession, redis_client, User, Trade, Account_Data, Trade_Result, get_db
-from app.core.security import pwd_context, create_jwt_token, verify_jwt_token
+from app.core.security import pwd_context, create_jwt_token, verify_jwt_token, get_jwt_from_cookie
 
 from app.core.celery_con import celery, process_trade
 
-from app.api.classes.clsss import GetData, UserEnterData, UserData
+from app.api.classes.clsss import GetData, UserEnterData, UserData, Exchange
 
 import asyncio
 
 
 router_users = APIRouter()
 
-TOKEN_LIFE_TIME = 30 #minutes
+TOKEN_LIFE_TIME = 120 #minutes
 
 @router_users.post("/api/v1/auth/register/")
 async def register(enter_data: User_Form, db: AsyncSession = Depends(get_db)):
@@ -127,10 +129,9 @@ async def verify_jwt_token_point(verify: dict = Depends(verify_jwt_token)):
     return {"user_name": verify}
 
 @router_users.post("/api/v1/trade_it/")
-async def trade_it(trade_data: Trade_Form, db: AsyncSession = Depends(get_db)):
+async def trade_it(trade_data: Trade_Form, db: AsyncSession = Depends(get_db), token: str = Depends(get_jwt_from_cookie)):
     """
-    Сохранения результатов сделки в postgre
-    Временное сохранение в redis    
+    Сохранения результатов сделки в postgre  
     """
     time = datetime.now(UTC) + timedelta(minutes=trade_data.time) # Переводим из int в datetime
 
@@ -139,11 +140,10 @@ async def trade_it(trade_data: Trade_Form, db: AsyncSession = Depends(get_db)):
     leverageX=trade_data.leverage
     direction=trade_data.direction
     time_naive = time.replace(tzinfo=None) # Преобразуем в naive datetime (без временной зоны)
-    start_price=trade_data.start_price
-    user_name=trade_data.user_name
-
-
-    user = await GetData(db, User).from_username(user_name)
+    start_price = Exchange(trade_data.exchange).get_current_exchange()
+    user = await GetData(db, User).from_token(token)
+    if user == "no token":
+        return RedirectResponse(url="/")
     user_id = user.id
 
     trade = Trade(
@@ -155,6 +155,8 @@ async def trade_it(trade_data: Trade_Form, db: AsyncSession = Depends(get_db)):
         start_price=start_price,
         user_id=user_id,
     )
+
+
     db.add(trade)
     await db.commit()
     await db.refresh(trade)
@@ -164,7 +166,7 @@ async def trade_it(trade_data: Trade_Form, db: AsyncSession = Depends(get_db)):
         args=[trade.id],
         countdown=trade_data.time * 60  # Задержка в секундах
     )
-    return {"trade_id": trade.id}
+    return {"trade_id": trade.id, "start_price": start_price}
 
 @router_users.websocket("/api/v1/ws/trade_status/{trade_id}")
 async def websocket_trade_status(websocket: WebSocket, trade_id: int, db: AsyncSession = Depends(get_db)):
@@ -177,7 +179,10 @@ async def websocket_trade_status(websocket: WebSocket, trade_id: int, db: AsyncS
                 trade = await GetData(db, Trade).from_id(trade_id)
                 
                 if not trade:
-                    await websocket.send_json({"error": "Trade not found"})
+                    try:
+                        await websocket.send_json({"error": "Trade not found"})
+                    except WebSocketDisconnect:
+                        return
                     break
                 
                 # Принудительно обновляем данные
@@ -185,23 +190,26 @@ async def websocket_trade_status(websocket: WebSocket, trade_id: int, db: AsyncS
                 
                 if trade.status != "pending":
                     trade_result = await GetData(db, Trade_Result).from_trade_id(trade_id)
-                    
+
                     response = {
                         "status": trade.status,
                         "result": trade.trade_result,
-                        "end_price": trade_result.end_price if trade_result else None,
+                        "end_price": trade_result.end_price,
                         "timestamp": datetime.now().isoformat()
                     }
-                    
-                    await websocket.send_json(response)
-                    await UserData(db, trade.user).update_balance(trade_result.money)
-                    await websocket.close()
+
+                    try:
+                        await websocket.send_json(response)
+                        user = await GetData(db, User).from_id(trade.user_id)
+                        await UserData(db, user).update_balance(trade_result.money)
+
+                        await websocket.close()
+                    except WebSocketDisconnect:
+                        return
                     break
 
-            await asyncio.sleep(3)  # Уменьшенный интервал проверки
+            await asyncio.sleep(3)
             
     except WebSocketDisconnect:
-        await websocket.close()
-    except Exception as e:
-        await websocket.send_json({"error": str(e)})
-        await websocket.close()
+        return
+

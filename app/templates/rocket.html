@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --primary: #00E676;
+        --primary-hover: #00C853;
+        --bg-dark: #121212;
+        --bg-card: #1E1E1E;
+        --bg-input: #2C2C2C;
+        --text-primary: #FFFFFF;
+        --text-secondary: #AAAAAA;
+        --danger: #FF5252;
+        --success: #00E676;
+        --border-radius: 12px;
+        --box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    body {
+        background-color: var(--bg-dark);
+        color: var(--text-primary);
+        font-family: 'Inter', 'Segoe UI', 'Arial', sans-serif;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .game-container {
+        position: relative;
+        width: 100%;
+        max-width: 480px;
+        padding: 0 20px;
+    }
+
+    .rocket-animation {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        overflow: hidden;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+    }
+
+    .rocket-animation.active {
+        opacity: 1;
+    }
+
+    .rocket {
+        position: absolute;
+        bottom: -100px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 120px;
+        background-image: url('/static/images/rocket2.png');
+        background-size: contain;
+        background-repeat: no-repeat;
+        transition: bottom 0.1s linear;
+    }
+
+    .multiplier-container {
+        background: linear-gradient(135deg, rgba(30, 30, 30, 0.8) 0%, rgba(20, 20, 20, 0.9) 100%);
+        backdrop-filter: blur(10px);
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        text-align: center;
+        transform: translateY(20px);
+        opacity: 0;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .multiplier-container.show {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    .multiplier-label {
+        font-size: 1rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+    }
+
+    .multiplier-value {
+        font-size: 4rem;
+        font-weight: 700;
+        color: var(--primary);
+        text-shadow: 0 0 20px rgba(0, 230, 118, 0.5);
+        margin: 0;
+        line-height: 1;
+    }
+
+    .game-card {
+        background: linear-gradient(135deg, rgba(30, 30, 30, 0.8) 0%, rgba(20, 20, 20, 0.9) 100%);
+        backdrop-filter: blur(10px);
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        padding: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .game-title {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        position: relative;
+        display: inline-block;
+        width: 100%;
+    }
+
+    .game-title::after {
+        content: "🚀";
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    
+    .bet-form {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--border-radius);
+        background-color: var(--bg-input);
+        color: var(--text-primary);
+        font-size: 1rem;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        text-align: left; /* Выравнивание текста по левому краю */
+        box-sizing: border-box; /* Учитываем padding в общей ширине */
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.2);
+    }
+    
+    .btn {
+        width: 100%;
+        padding: 1rem;
+        border: none;
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 1rem;
+    }
+
+    .btn-primary {
+        background-color: var(--primary);
+        color: #000000;
+    }
+
+    .btn-primary:hover {
+        background-color: var(--primary-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 230, 118, 0.3);
+    }
+
+    .btn-primary:active {
+        transform: translateY(0);
+    }
+
+    .btn-secondary {
+        background-color: var(--danger);
+        color: var(--text-primary);
+        opacity: 0;
+        transform: translateY(10px);
+        pointer-events: none;
+        transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
+    }
+
+    .btn-secondary.show {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+
+    .btn-secondary:hover {
+        background-color: #FF1744;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 82, 82, 0.3);
+    }
+
+    .btn-secondary:active {
+        transform: translateY(0);
+    }
+
+    .result-container {
+        margin-top: 1.5rem;
+        padding: 1.5rem;
+        border-radius: var(--border-radius);
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: 600;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.5s ease, transform 0.5s ease, background-color 0.3s ease;
+        background-color: rgba(30, 30, 30, 0.5);
+        backdrop-filter: blur(5px);
+    }
+
+    .result-container.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .result-win {
+        color: var(--success);
+    }
+
+    .result-lose {
+        color: var(--danger);
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .pulse {
+        animation: pulse 1s infinite;
+    }
+
+    /* Rocket Animation */
+    @keyframes fly {
+        0% {
+            bottom: -100px;
+        }
+        100% {
+            bottom: 120%;
+        }
+    }
+
+    .fly-away {
+        animation: fly 2s forwards;
+    }
+
+    /* Убираем стрелки в поле ввода числа */
+    /* Для Chrome, Safari, Edge, Opera */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    /* Для Firefox */
+    input[type=number] {
+        -moz-appearance: textfield;
+        text-align: left; /* Выравнивание текста по левому краю */
+        padding-right: 1rem; /* Уменьшаем правый отступ */
+        box-sizing: border-box; /* Учитываем padding в общей ширине */
+        width: 100%; /* Полная ширина контейнера */
+    }
+</style>
+
+<div class="game-container">
+    <div class="rocket-animation" id="rocketAnimation">
+        <div class="rocket" id="rocket"></div>
+    </div>
+
+    <div class="multiplier-container" id="multiplierContainer">
+        <div class="multiplier-label">МНОЖИТЕЛЬ</div>
+        <div class="multiplier-value" id="multiplierValue">1.0x</div>
+    </div>
+
+    <div class="game-card">
+        <h1 class="game-title">Rocket Game</h1>
+        
+        <form id="betForm" class="bet-form">
+            <div class="form-group">
+                <label for="start_bet" class="form-label">Сумма ставки(₽):</label>
+                <input type="number" id="start_bet" class="form-input" min="10" placeholder="Введите сумму ставки" required>
+            </div>
+            
+            <button type="button" id="submitBtn" class="btn btn-primary">БАБЛО</button>
+            <button type="button" id="takeProfitBtn" class="btn btn-secondary">ЗАБРАТЬ СОЧНЫЙ ИКС</button>
+        </form>
+
+        <div id="result" class="result-container"></div>
+    </div>
+</div>
+
+<script src="/static/js/check_token.js"></script>
+<script src="/static/js/rocket.js"></script>
+{% endblock %}
+

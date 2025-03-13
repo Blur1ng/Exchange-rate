@@ -1,8 +1,6 @@
 from celery import Celery
-import requests
 from .database_con import Trade, Trade_Result, sync_session
-from .path import apipath
-
+from app.api.classes.clsss import Exchange
 
 
 celery = Celery(
@@ -27,9 +25,7 @@ def process_trade(trade_id: int):
 
         try:
             # Обращаемся к api и узнаем текущий курс
-            response = requests.get(f"{apipath}/api/v1/rate/coin/{trade.exchange}/")
-            data = response.json()
-            end_price = data[f"{trade.exchange}USDT"]
+            end_price = Exchange(trade.exchange).get_current_exchange()
 
             if (end_price > trade.start_price and trade.direction == "up") or (end_price < trade.start_price and trade.direction == "down"):
                 result = "W"

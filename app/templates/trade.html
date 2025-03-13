@@ -123,6 +123,7 @@
         transform: translateY(0px);
         opacity: 1;
     }
+
     .current-container {
         position: absolute;
         left: 75%;
@@ -146,6 +147,7 @@
         transform: translateY(0px);
         opacity: 1;
     }
+
     .buy-container {
         position: absolute;
         top: -15px;
@@ -159,6 +161,22 @@
         background: rgba(30, 30, 30, 0.9);
         padding: 4px 8px;
         border-radius: 3px;
+    }
+    /* Убираем стрелки в поле ввода числа */
+    /* Для Chrome, Safari, Edge, Opera */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    /* Для Firefox */
+    input[type=number] {
+        -moz-appearance: textfield;
+        text-align: left; /* Выравнивание текста по левому краю */
+        padding-right: 1rem; /* Уменьшаем правый отступ */
+        box-sizing: border-box; /* Учитываем padding в общей ширине */
+        width: 100%; /* Полная ширина контейнера */
     }
 </style>
 
@@ -189,7 +207,7 @@
             </div>
 
             <div class="form-group">
-                <label for="amount">Сумма ставки($):</label>
+                <label for="amount">Сумма ставки(₽):</label>
                 <input type="number" name="amount" id="amount" class="form-input" min="1" required>
             </div>
 
@@ -224,7 +242,6 @@
 
         <div id="result" class="result-container"></div>
     </div>
-    <script src="/static/js/check_token.js"></script>
     <script src="/static/js/trade_front.js"></script>
 </body>
 {% endblock %}

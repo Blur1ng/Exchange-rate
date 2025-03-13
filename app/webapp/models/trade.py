@@ -5,8 +5,6 @@ class Trade_Form(BaseModel):
     leverage: int
     direction: str
     time: int
-    start_price: float
-    user_name: str
 
     class Config:
         from_attributes = True

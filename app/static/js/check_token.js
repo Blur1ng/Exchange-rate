@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", async function () {
     try {
-        const response = await fetch("/api/v1/verify_jwt_token", {
+        const response = await fetch("/api/v1/verify_jwt_token/", {
             method: "GET",
             credentials: "include",
         });
