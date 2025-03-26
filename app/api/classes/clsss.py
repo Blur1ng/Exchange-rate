@@ -1,5 +1,4 @@
-from fastapi import HTTPException, Depends
-import requests
+from fastapi import HTTPException
 from app.core.database_con import User, Account_Data, AsyncSession
 from app.api.models.users import User_Form
 from sqlalchemy.future import select
@@ -8,6 +7,7 @@ from datetime import datetime, timedelta, UTC
 import random
 import httpx
 from app.api.anotherAPI.currency import get_crypto_price
+
 
 
 class UserEnterData:
@@ -67,7 +67,7 @@ class GetData:
             data = result.scalar_one_or_none()
             return data
         except Exception as e:
-            print(f"ERROR: {id} is not a 'id' ")
+            print(f"ERROR: {id} is not a 'user_id' ")
 
     async def from_trade_id(self, id: int):
         try:

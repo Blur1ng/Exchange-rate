@@ -1,0 +1,11 @@
+<html>
+<body>
+    <div style="display: flex; align-items: center; justify-content: center; flex-direction: column;">
+        <h3>verification_html</h3>
+        <p>Спасибо за регистрацию, {{ username }}!</p>
+        <p>Для подтверждения вашего email, пожалуйста, перейдите по ссылке:</p>
+        <a href="{{ verification_url }}">Подтвердить email</a>
+        <p>Ссылка действительна в течение 24 часов.</p>
+    </div>
+</body>
+</html>

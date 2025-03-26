@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", function () {
             container_peredv.classList.add("show");  
             
             // контейнтейнеры цен
-            price_show.innerText = `${formData.exchange}:  ${result.start_price.toFixed(4)}₽`;
+            price_show.innerText = `${formData.exchange}:  ${result.start_price.toFixed(4)}$`;
             container_show1.classList.add("show");
             
 
@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
             
                     if (data.status === "completed") {
-                        current_show.innerText = `${formData.exchange}:  ${data.end_price.toFixed(4)}₽`;
+                        current_show.innerText = `${formData.exchange}:  ${data.end_price.toFixed(4)}$`;
                         container_show2.classList.add("show");
                         resultContainer.innerText = data.result === "W" 
                             ? `Победа! +${formData.bet_amount * formData.leverage}₽`

@@ -20,8 +20,8 @@ POSTGRES_DB = os.getenv("DB_NAME")
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
 # Создание JWT токена
-def create_jwt_token(data: dict):
-    return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
+def create_jwt_token(payload: dict):
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 # Получение Cookie
 def get_jwt_from_cookie(request: Request):

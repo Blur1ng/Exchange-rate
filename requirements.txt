@@ -64,3 +64,6 @@ vine==5.1.0
 watchfiles==1.0.4
 wcwidth==0.2.13
 websockets==14.2
+kafka-python==2.1.1
+fastapi-mail==1.4.2
+python-jose[cryptography]==3.4.0

@@ -20,9 +20,9 @@ async def increase_multiplier(websocket: WebSocket, multiplier_state: dict):
         while True:
             multiplier_state["value"] += k
             multiplier_state["value"] = round(multiplier_state["value"], 1)
-            if multiplier_state["value"] > 10: k = 1
-            elif multiplier_state["value"] > 5: k = 0.5
-            elif multiplier_state["value"] == 1.5: k = 0.3
+            if multiplier_state["value"] > 8: k = 1
+            elif multiplier_state["value"] > 4: k = 0.3
+            elif multiplier_state["value"] == 1.5: k = 0.1
             
             await websocket.send_json({"action": "update_multiplier", "value": multiplier_state["value"]})
             

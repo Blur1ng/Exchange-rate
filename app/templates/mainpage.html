@@ -7,45 +7,90 @@
 <style>
     :root {
         --accent: #00ff88;
+        --accent-hover: #00cc66;
         --dark: #1e1e1e;
         --darker: #121212;
+        --danger: #FF5252;
     }
     body {
         background-color: var(--darker);
         color: white;
-        font-family: 'Arial', sans-serif;
+        font-family: 'Inter', 'Segoe UI', 'Arial', sans-serif;
         margin: 0;
         line-height: 1.6;
     }
-    /* Герой-секция */
+   
     .hero {
         padding: 8rem 2rem;
         text-align: center;
         background: linear-gradient(45deg, var(--dark), var(--darker));
+        position: relative;
+        overflow: hidden;
     }
+    
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at center, rgba(0, 255, 136, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+        z-index: 0;
+    }
+    
+    .hero .container {
+        position: relative;
+        z-index: 1;
+    }
+    
     .hero h1 {
         font-size: 3.5rem;
         margin-bottom: 1.5rem;
-        background: linear-gradient(to right, var(--accent), #00cc66);
+        background: linear-gradient(to right, var(--accent), var(--accent-hover));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        font-weight: 800;
     }
+    
+    .hero p {
+        font-size: 1.2rem;
+        max-width: 600px;
+        margin: 0 auto 2rem;
+        color: rgba(255, 255, 255, 0.8);
+    }
+    
     /* Секция шагов */
     .steps {
-        padding: 4rem 2rem;
+        padding: 6rem 2rem;
         background-color: var(--dark);
     }
+    
+    .section-title {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 3rem;
+        color: var(--accent);
+        font-weight: 700;
+    }
+    
     .step-card {
         background: var(--darker);
         padding: 2rem;
         border-radius: 15px;
         margin: 1rem;
-        transition: transform 0.3s ease;
+        transition: all 0.3s ease;
         max-width: 300px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     }
+    
     .step-card:hover {
         transform: translateY(-10px);
+        border-color: var(--accent);
+        box-shadow: 0 15px 40px rgba(0, 255, 136, 0.1);
     }
+    
     .step-number {
         width: 50px;
         height: 50px;
@@ -57,7 +102,9 @@
         font-weight: bold;
         color: var(--dark);
         margin-bottom: 1rem;
+        font-size: 1.2rem;
     }
+    
     /* Сетка */
     .grid {
         display: grid;
@@ -66,6 +113,7 @@
         max-width: 1200px;
         margin: 0 auto;
     }
+    
     /* Кнопки */
     .cta-button {
         background: var(--accent);
@@ -76,22 +124,42 @@
         font-weight: bold;
         transition: all 0.3s ease;
         display: inline-block;
-        margin: 1rem;
+        margin: 0.5rem;
+        border: none;
+        cursor: pointer;
     }
+    
     .cta-button:hover {
         transform: scale(1.05);
         box-shadow: 0 0 15px var(--accent);
+        background: var(--accent-hover);
     }
-    /* Адаптивность */
-    @media (max-width: 768px) {
-        .hero h1 {
-            font-size: 2.5rem;
-        }
+    
+    .cta-button.secondary {
+        background: transparent;
+        border: 2px solid var(--accent);
+        color: var(--accent);
     }
+    
+    .cta-button.secondary:hover {
+        background: rgba(0, 255, 136, 0.1);
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+    }
+    
+    .cta-button.danger {
+        background: var(--danger);
+        color: white;
+    }
+    
+    .cta-button.danger:hover {
+        box-shadow: 0 0 15px var(--danger);
+        background: #ff3333;
+    }
+    
     /* Секция преимуществ */
     .features {
         padding: 6rem 2rem;
-        background: var(--dark);
+        background: var(--darker);
     }
 
     .features .container {
@@ -104,20 +172,27 @@
         font-size: 2.5rem;
         margin-bottom: 4rem;
         color: var(--accent);
+        font-weight: 700;
     }
 
     .feature-card {
-        background: var(--darker);
+        background: var(--dark);
         padding: 2rem;
         border-radius: 15px;
         text-align: center;
-        transition: transform 0.3s ease;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
 
     .feature-card:hover {
         transform: translateY(-10px);
         border-color: var(--accent);
+        box-shadow: 0 15px 40px rgba(0, 255, 136, 0.1);
     }
 
     .feature-card img {
@@ -136,6 +211,7 @@
         color: var(--accent);
         margin: 1rem 0;
         font-size: 1.4rem;
+        font-weight: 700;
     }
 
     .feature-card p {
@@ -143,41 +219,222 @@
         font-size: 1rem;
         line-height: 1.6;
     }
-
-    /* Адаптивность для преимуществ */
+    
+    .feature-card .tag {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        background: rgba(0, 255, 136, 0.1);
+        color: var(--accent);
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin-bottom: 1rem;
+    }
+    
+    .rocket-game {
+        padding: 6rem 2rem;
+        background: linear-gradient(135deg, var(--dark), var(--darker));
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .rocket-game::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 50%;
+        height: 100%;
+        background: radial-gradient(circle at right, rgba(255, 82, 82, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+        z-index: 0;
+    }
+    
+    .rocket-game .container {
+        position: relative;
+        z-index: 1;
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .rocket-game h2 {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 1.5rem;
+        color: var(--danger);
+        font-weight: 700;
+    }
+    
+    .rocket-game p {
+        text-align: center;
+        max-width: 800px;
+        margin: 0 auto 3rem;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 1.1rem;
+    }
+    
+    .rocket-preview {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        margin-bottom: 3rem;
+    }
+    
+    .rocket-image {
+        flex: 1;
+        padding: 2rem;
+        text-align: center;
+    }
+    
+    .rocket-image img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 15px;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    }
+    
+    .rocket-features {
+        flex: 1;
+        padding: 2rem;
+    }
+    
+    .rocket-feature {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+    }
+    
+    .rocket-feature-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--danger);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    
+    .rocket-feature-icon span {
+        font-size: 1.2rem;
+        color: white;
+    }
+    
+    .rocket-feature-text h4 {
+        margin: 0 0 0.5rem;
+        color: white;
+        font-size: 1.2rem;
+    }
+    
+    .rocket-feature-text p {
+        margin: 0;
+        text-align: left;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1rem;
+    }
+    
+    @media (max-width: 992px) {
+        .rocket-preview {
+            flex-direction: column;
+        }
+        
+        .rocket-image, .rocket-features {
+            width: 100%;
+            padding: 1rem;
+        }
+    }
+    
     @media (max-width: 768px) {
-        .features {
-            padding: 3rem 1rem;
+        .hero h1 {
+            font-size: 2.5rem;
         }
-
-        .features h2 {
+        
+        .section-title, .features h2, .rocket-game h2 {
             font-size: 2rem;
-            margin-bottom: 2rem;
         }
-
-        .feature-card {
-            margin: 1rem 0;
-            padding: 1.5rem;
+        
+        .features, .steps, .rocket-game {
+            padding: 4rem 1rem;
+        }
+        
+        .grid {
+            gap: 1.5rem;
         }
     }
 </style>
 
 <body>
-    <!-- Герой-секция -->
     <section class="hero">
         <div class="container">
             <h1>Торгуйте криптовалютой с умом</h1>
             <p>Делайте прогнозы, ставьте и получайте прибыль на изменении курсов</p>
-            {% if token %}
-                <a href="/trade" class="cta-button">Начать торговлю</a>
-            {% else %}
-                <a href="/login" class="cta-button">Начать торговлю</a>
-            {% endif %}
+            <div>
+                {% if token %}
+                    <a href="/trade" class="cta-button">Начать торговлю</a>
+                {% else %}
+                    <a href="/login" class="cta-button">Начать торговлю</a>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <section class="rocket-game">
+        <div class="container">
+            <h2>Ракетка 🚀</h2>
+            <p>Испытайте свою удачу! Сделайте ставку, запустите ракету и заберите выигрыш до того, как она улетит.</p>
+            
+            <div class="rocket-preview">
+                <div class="rocket-image">
+                    <img src="/static/images/rocket-game-preview.jpg" alt="Игра Ракетка" onerror="this.src='/static/images/rocket2.png'; this.style.maxWidth='300px';">
+                </div>
+                
+                <div class="rocket-features">
+                    <div class="rocket-feature">
+                        <div class="rocket-feature-icon">
+                            <span>⏱️</span>
+                        </div>
+                        <div class="rocket-feature-text">
+                            <h4>Растущий множитель</h4>
+                            <p>Чем дольше летит ракета, тем выше множитель вашей ставки. Но не ждите слишком долго!</p>
+                        </div>
+                    </div>
+                    
+                    <div class="rocket-feature">
+                        <div class="rocket-feature-icon">
+                            <span>💰</span>
+                        </div>
+                        <div class="rocket-feature-text">
+                            <h4>Огромные иксы</h4>
+                            <p>Успейте забрать огромный икс до того, как ракета улетит, иначе вы потеряете свою ставку.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="rocket-feature">
+                        <div class="rocket-feature-icon">
+                            <span>🎮</span>
+                        </div>
+                        <div class="rocket-feature-text">
+                            <h4>Простой геймплей</h4>
+                            <p>Минимум правил, максимум адреналина. Делайте ставку и решайте, когда забрать выигрыш.</p>
+                        </div>
+                    </div>
+                    
+                    {% if token %}
+                        <a href="/rocket" class="cta-button danger">Играть сейчас</a>
+                    {% else %}
+                        <a href="/login" class="cta-button danger">Войти и играть</a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </section>
 
     <!-- Как это работает -->
     <section class="steps">
+        <h2 class="section-title">Как это работает</h2>
         <div class="grid">
             <div class="step-card">
                 <div class="step-number">1</div>
@@ -208,30 +465,32 @@
             <h2>Почему выбирают нас?</h2>
             <div class="grid">
                 <div class="feature-card">
-                    <p>Безопасность</p>
-                    <h4>Максимальная безопасность</h4>
-                    <p>Все транзакции защищены банковским уровнем шифрования, средства хранятся в холодных кошельках</p>
+                    <div>
+                        <span class="tag">Безопасность</span>
+                        <h4>Максимальная безопасность</h4>
+                        <p>Все транзакции защищены банковским уровнем шифрования, средства хранятся в холодных кошельках</p>
+                    </div>
                 </div>
                 
                 <div class="feature-card">
-                    <p>Плечо</p>
-                    <h4>Плечо до 100x</h4>
-                    <p>Увеличивайте свою потенциальную прибыль с помощью кредитного плеча</p>
+                    <div>
+                        <span class="tag">Плечо</span>
+                        <h4>Плечо до 100x</h4>
+                        <p>Увеличивайте свою потенциальную прибыль с помощью кредитного плеча</p>
+                    </div>
                 </div>
                 
                 <div class="feature-card">
-                    <p>Поддержка</p>
-                    <h4>Круглосуточная поддержка</h4>
-                    <p>Наша команда поддержки всегда готова помочь на русском и английском языках</p>
+                    <div>
+                        <span class="tag">Поддержка</span>
+                        <h4>Круглосуточная поддержка</h4>
+                        <p>Наша команда поддержки всегда готова помочь на русском и английском языках</p>
+                    </div>
                 </div>
                 
-                <div class="feature-card">
-                    <p>Мобильность</p>
-                    <h4>Мобильная версия</h4>
-                    <p>Торгуйте с любого устройства через адаптивный интерфейс</p>
-                </div>
             </div>
         </div>
     </section>
 </body>
 {% endblock %}
+

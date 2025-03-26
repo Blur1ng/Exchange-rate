@@ -1,17 +1,30 @@
+networks:
+  app-tier:
+    driver: bridge
 
 services:
-  alembic:
-    build: .
-    command: alembic upgrade head
-    volumes:
-      - .:/app
-    depends_on:
-      - db
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
     environment:
-      - DATABASE_URL=${DATABASE_URL}
-    env_file:
-      - .env
-
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - app-tier
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - 9092:9092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - app-tier
   fastapi:
     build: .
     command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
@@ -26,7 +39,9 @@ services:
       - DATABASE_URL=${DATABASE_URL}
     env_file:
       - .env
-  
+    networks:
+      - app-tier
+
   celery:
     build: .
     command: celery -A app.core.celery_con worker --loglevel=info
@@ -39,11 +54,15 @@ services:
       - DATABASE_URL=${DATABASE_URL}
     env_file:
       - .env
+    networks:
+      - app-tier
 
   redis:
     image: "redis:latest"
     ports:
       - "6379:6379"
+    networks:
+      - app-tier
 
   db:
     image: "postgres:latest"
@@ -52,9 +71,11 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-tier
 
 volumes:
   postgres_data:
