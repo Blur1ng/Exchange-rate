@@ -8,8 +8,6 @@ from app.api.classes.account import ConfimEmail
 from app.core.security import get_jwt_from_cookie
 from fastapi.templating import Jinja2Templates
 
-from app.kafka.producer import kafka_producer
-from app.kafka.consumer import kafka_consumer
 import jwt
 
 import logging
@@ -31,22 +29,6 @@ async def update_account(email: str, db: AsyncSession = Depends(get_db), token: 
         print(verify_email)
         await redis_client.set(f"{verify_email}", f"{user.id}", ex=300)
 
-        try:
-            kafka_producer.connect()
-
-            kafka_producer.send_verification_email(
-                email=email,
-                username=user.username,
-                user_id=user.id,
-                verify_email=verify_email,
-            )
-        finally:
-            kafka_producer.close()
-
-        try:
-            kafka_consumer.start()
-        finally:
-            kafka_consumer.close()
 
         return {"email": email,}
     raise HTTPException(status_code=401, detail=f"Invalid email", headers={"WWW-Authenticate": "Bearer"})

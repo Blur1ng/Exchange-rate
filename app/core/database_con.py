@@ -1,13 +1,12 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 import redis.asyncio as redis
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Boolean, create_engine
 from .security import DB_PASSWORD, POSTGRES_DB, POSTGRES_USER
 
 
-
-# Синхронная сессия для Celery
+# Синхронная сессия 
 sinc_engine = create_engine(f"postgresql+psycopg2://{POSTGRES_USER}:{DB_PASSWORD}@db:5432/{POSTGRES_DB}")
 sync_session = sessionmaker(bind=sinc_engine)
 

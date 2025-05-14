@@ -1,6 +1,4 @@
 import random
-from app.core.database_con import redis_client, User
-
 
 class ConfimEmail:
     SIMBOL_LIST = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890"

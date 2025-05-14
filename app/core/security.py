@@ -19,19 +19,19 @@ POSTGRES_DB = os.getenv("DB_NAME")
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
-# Создание JWT токена
 def create_jwt_token(payload: dict):
+    """Создание JWT токена"""
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
-# Получение Cookie
 def get_jwt_from_cookie(request: Request):
+    """Получение Cookie"""
     token = request.cookies.get("access_token")
     if not token:
         return None
     return token
 
-# Верификация JWT токена
 async def verify_jwt_token(token: str = Depends(get_jwt_from_cookie)):
+    """Верификация JWT токена"""
     if token is None:
         raise HTTPException(status_code=401, detail="[-] No token found", headers={"WWW-Authenticate": "Bearer"})
     try:

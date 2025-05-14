@@ -31,11 +31,11 @@ async def roulette(request: Request, token: str = Depends(get_jwt_from_cookie)):
 
 @router_main_back.get("/account")
 async def trade(request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(get_jwt_from_cookie)):
-    user = await GetData(db, User).from_token(token)
+    user: User = await GetData(db, User).from_token(token)
     if user == "no token":
         return RedirectResponse(url="/")
     username = user.username
-    account = await GetData(db, Account_Data).from_account_id(user.account_id)
+    account: Account_Data = await GetData(db, Account_Data).from_account_id(user.account_id)
     balance = account.balance
     user_email = account.email
     is_verified = account.is_verified
