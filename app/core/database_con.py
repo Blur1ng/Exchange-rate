@@ -2,26 +2,36 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 import redis.asyncio as redis
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Boolean, create_engine
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    DateTime,
+    ForeignKey,
+    Float,
+    Boolean,
+    create_engine,
+)
 from .security import DB_PASSWORD, POSTGRES_DB, POSTGRES_USER
 
 
-# Синхронная сессия 
-sinc_engine = create_engine(f"postgresql+psycopg2://{POSTGRES_USER}:{DB_PASSWORD}@db:5432/{POSTGRES_DB}")
+# Синхронная сессия
+sinc_engine = create_engine(
+    f"postgresql+psycopg2://{POSTGRES_USER}:{DB_PASSWORD}@db:5432/{POSTGRES_DB}"
+)
 sync_session = sessionmaker(bind=sinc_engine)
 
 # Асинхронная сессия
-SQLACHEMY_DATABASE_URL = f"postgresql+asyncpg://{POSTGRES_USER}:{DB_PASSWORD}@db:5432/{POSTGRES_DB}"
+SQLACHEMY_DATABASE_URL = (
+    f"postgresql+asyncpg://{POSTGRES_USER}:{DB_PASSWORD}@db:5432/{POSTGRES_DB}"
+)
 engine = create_async_engine(SQLACHEMY_DATABASE_URL)
 
 
 Base = declarative_base()
 
-async_session = sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False
-)
+async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
 
 class Trade(Base):
     __tablename__ = "Trade_data"
@@ -34,10 +44,11 @@ class Trade(Base):
     time = Column(DateTime)
     start_price = Column(Float)
     status = Column(String, index=True, default="pending")
-    trade_result = Column(String, index=True, default="pending") #W/L
+    trade_result = Column(String, index=True, default="pending")  # W/L
 
     user_id = Column(Integer, ForeignKey("User_data.id"))
     result = Column(Integer, ForeignKey("Trade_result.trade_id"))
+
 
 class Trade_Result(Base):
     __tablename__ = "Trade_result"
@@ -47,14 +58,16 @@ class Trade_Result(Base):
     end_price = Column(Float, nullable=True)
     money = Column(Float, index=True)
 
+
 class User(Base):
     __tablename__ = "User_data"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, index=True, unique=True)
     password = Column(String)
 
     account_id = Column(Integer, ForeignKey("Account_data.account_id"))
+
 
 class Account_Data(Base):
     __tablename__ = "Account_data"
@@ -65,7 +78,8 @@ class Account_Data(Base):
     last_enter = Column(DateTime)
     status = Column(String, index=True, default="Offline")
     email = Column(String(100), unique=True, index=True)
-    is_verified = Column(Boolean, default=False)  
+    is_verified = Column(Boolean, default=False)
+
 
 class Rocket(Base):
     __tablename__ = "Rocket"
@@ -77,15 +91,15 @@ class Rocket(Base):
     zabrannyyX = Column(Float, index=True)
     time_take_profit = Column(DateTime)
     time_uspel = Column(DateTime)
-    
 
     user_id = Column(Integer, ForeignKey("User_data.id"))
-    
+
 
 # redis
 redis_client = redis.from_url(f"redis://redis:6379", db=0)
 
+
 async def get_db():
-        # Сессия с бд
-        async with async_session() as db:
-            yield db
+    # Сессия с бд
+    async with async_session() as db:
+        yield db

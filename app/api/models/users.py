@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class User_Form(BaseModel):
     id: int | None = None
     username: str

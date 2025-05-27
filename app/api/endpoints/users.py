@@ -6,8 +6,21 @@ from fastapi.responses import RedirectResponse
 
 from app.api.models.users import User_Form
 from app.webapp.models.trade import Trade_Form
-from app.core.database_con import  AsyncSession, redis_client, User, Trade, Account_Data, Trade_Result, get_db
-from app.core.security import pwd_context, create_jwt_token, verify_jwt_token, get_jwt_from_cookie
+from app.core.database_con import (
+    AsyncSession,
+    redis_client,
+    User,
+    Trade,
+    Account_Data,
+    Trade_Result,
+    get_db,
+)
+from app.core.security import (
+    pwd_context,
+    create_jwt_token,
+    verify_jwt_token,
+    get_jwt_from_cookie,
+)
 
 from app.core.celery_con import celery, process_trade
 
@@ -18,7 +31,8 @@ import asyncio
 
 router_users = APIRouter()
 
-TOKEN_LIFE_TIME = 120 #minutes
+TOKEN_LIFE_TIME = 120  # minutes
+
 
 @router_users.post("/api/v1/auth/register/")
 async def register(enter_data: User_Form, db: AsyncSession = Depends(get_db)):
@@ -48,7 +62,8 @@ async def register(enter_data: User_Form, db: AsyncSession = Depends(get_db)):
         await db.refresh(user)
         return {"Registration was successful"}
     except Exception as e:
-            raise HTTPException(status_code=401, detail="Username already exists")
+        raise HTTPException(status_code=401, detail="Username already exists")
+
 
 async def check_for_past_tense(username: str) -> bool:
     """
@@ -68,6 +83,7 @@ async def check_for_past_tense(username: str) -> bool:
             return True
         return False
     return True
+
 
 async def anti_password_selection_system(username: str) -> bool:
     """
@@ -89,21 +105,30 @@ async def anti_password_selection_system(username: str) -> bool:
     if wrong_attempts >= 5:
         # Блокируем пользователя на 1 минуту
         block_key = f"blocked:{username}"
-        await redis_client.set(block_key, (datetime.now() + timedelta(minutes=1)).isoformat(), ex=60)
+        await redis_client.set(
+            block_key, (datetime.now() + timedelta(minutes=1)).isoformat(), ex=60
+        )
         return True
     return False
 
+
 @router_users.post("/api/v1/auth/login/")
-async def login(user_data: User_Form, response: Response, db: AsyncSession = Depends(get_db)):
+async def login(
+    user_data: User_Form, response: Response, db: AsyncSession = Depends(get_db)
+):
     """
     Вход юзера в систему с созданием jwt токена
-    Также идет проверка на username, password и, при неправильно вводимых данных 
+    Также идет проверка на username, password и, при неправильно вводимых данных
     Вызывается функция анти_подбора_паролей() (anti_password_selection_system())
     """
     username = user_data.username
     user = await GetData(db, User).from_username(username)
 
-    if await check_for_past_tense(username) and user and pwd_context.verify(user_data.password, user.password):
+    if (
+        await check_for_past_tense(username)
+        and user
+        and pwd_context.verify(user_data.password, user.password)
+    ):
         # Время жизни токена
         token_lifetime = datetime.now(UTC) + timedelta(minutes=TOKEN_LIFE_TIME)
         token = create_jwt_token({"username": username, "exp": token_lifetime})
@@ -111,35 +136,53 @@ async def login(user_data: User_Form, response: Response, db: AsyncSession = Dep
         response.set_cookie(
             "access_token",
             token,
-            max_age=TOKEN_LIFE_TIME*60,
+            max_age=TOKEN_LIFE_TIME * 60,
             expires=TOKEN_LIFE_TIME,
-            httponly=True, # только серверу, а не клиентскому JavaScript.
-            secure=True, # https only
-            samesite="Strict", # ограничивает отправку cookie только с того же домена.
+            httponly=True,  # только серверу, а не клиентскому JavaScript.
+            secure=True,  # https only
+            samesite="Strict",  # ограничивает отправку cookie только с того же домена.
         )
         return {"message": "[+] Login successful"}
-        
+
     if await anti_password_selection_system(username):
-        raise HTTPException(status_code=429, detail="Too many attempts, try again in a few minutes", headers={"WWW-Authenticate": "Bearer"})
-    
-    raise HTTPException(status_code=401, detail="Invalid credentials", headers={"WWW-Authenticate": "Bearer"})
+        raise HTTPException(
+            status_code=429,
+            detail="Too many attempts, try again in a few minutes",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    raise HTTPException(
+        status_code=401,
+        detail="Invalid credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
 
 @router_users.get("/api/v1/verify_jwt_token/")
 async def verify_jwt_token_point(verify: dict = Depends(verify_jwt_token)):
     return {"user_name": verify}
 
-@router_users.post("/api/v1/trade_it/")
-async def trade_it(trade_data: Trade_Form, db: AsyncSession = Depends(get_db), token: str = Depends(get_jwt_from_cookie)):
-    """
-    Сохранения результатов сделки в postgre  
-    """
-    time = datetime.now(UTC) + timedelta(minutes=trade_data.time) # Переводим из int в datetime
 
-    exchange=trade_data.exchange
-    bet_amount=trade_data.bet_amount
-    leverageX=trade_data.leverage
-    direction=trade_data.direction
-    time_naive = time.replace(tzinfo=None) # Преобразуем в naive datetime (без временной зоны)
+@router_users.post("/api/v1/trade_it/")
+async def trade_it(
+    trade_data: Trade_Form,
+    db: AsyncSession = Depends(get_db),
+    token: str = Depends(get_jwt_from_cookie),
+):
+    """
+    Сохранения результатов сделки в postgre
+    """
+    time = datetime.now(UTC) + timedelta(
+        minutes=trade_data.time
+    )  # Переводим из int в datetime
+
+    exchange = trade_data.exchange
+    bet_amount = trade_data.bet_amount
+    leverageX = trade_data.leverage
+    direction = trade_data.direction
+    time_naive = time.replace(
+        tzinfo=None
+    )  # Преобразуем в naive datetime (без временной зоны)
     start_price = Exchange(trade_data.exchange).get_current_exchange()
     user = await GetData(db, User).from_token(token)
     if user == "no token":
@@ -156,46 +199,49 @@ async def trade_it(trade_data: Trade_Form, db: AsyncSession = Depends(get_db), t
         user_id=user_id,
     )
 
-
     db.add(trade)
     await db.commit()
     await db.refresh(trade)
 
     # Фоновая задача
     process_trade.apply_async(
-        args=[trade.id],
-        countdown=trade_data.time * 60  # Задержка в секундах
+        args=[trade.id], countdown=trade_data.time * 60  # Задержка в секундах
     )
     return {"trade_id": trade.id, "start_price": start_price}
 
+
 @router_users.websocket("/api/v1/ws/trade_status/{trade_id}")
-async def websocket_trade_status(websocket: WebSocket, trade_id: int, db: AsyncSession = Depends(get_db)):
+async def websocket_trade_status(
+    websocket: WebSocket, trade_id: int, db: AsyncSession = Depends(get_db)
+):
     await websocket.accept()
-    
+
     try:
         while True:
             # Используем отдельную сессию для каждого запроса
             async with db.begin():
                 trade = await GetData(db, Trade).from_id(trade_id)
-                
+
                 if not trade:
                     try:
                         await websocket.send_json({"error": "Trade not found"})
                     except WebSocketDisconnect:
                         return
                     break
-                
+
                 # Принудительно обновляем данные
                 await db.refresh(trade)
-                
+
                 if trade.status != "pending":
-                    trade_result = await GetData(db, Trade_Result).from_trade_id(trade_id)
+                    trade_result = await GetData(db, Trade_Result).from_trade_id(
+                        trade_id
+                    )
 
                     response = {
                         "status": trade.status,
                         "result": trade.trade_result,
                         "end_price": trade_result.end_price,
-                        "timestamp": datetime.now().isoformat()
+                        "timestamp": datetime.now().isoformat(),
                     }
 
                     try:
@@ -209,7 +255,6 @@ async def websocket_trade_status(websocket: WebSocket, trade_id: int, db: AsyncS
                     break
 
             await asyncio.sleep(3)
-            
+
     except WebSocketDisconnect:
         return
-

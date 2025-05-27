@@ -4,13 +4,11 @@ from app.api.classes.clsss import Exchange
 
 
 celery = Celery(
-    "tasks",
-    broker=f"redis://redis:6379/0",
-    backend=f"redis://redis:6379/1"
+    "tasks", broker=f"redis://redis:6379/0", backend=f"redis://redis:6379/1"
 )
-celery.conf.update(
-    broker_connection_retry_on_startup=True
-)
+celery.conf.update(broker_connection_retry_on_startup=True)
+
+
 @celery.task(name="core.celery_con.process_trade")
 def process_trade(trade_id: int):
     """
@@ -27,7 +25,9 @@ def process_trade(trade_id: int):
             # Обращаемся к api и узнаем текущий курс
             end_price = Exchange(trade.exchange).get_current_exchange()
 
-            if (end_price > trade.start_price and trade.direction == "up") or (end_price < trade.start_price and trade.direction == "down"):
+            if (end_price > trade.start_price and trade.direction == "up") or (
+                end_price < trade.start_price and trade.direction == "down"
+            ):
                 result = "W"
                 profit = trade.bet_amount * trade.leverageX
             else:
@@ -35,17 +35,15 @@ def process_trade(trade_id: int):
                 profit = -trade.bet_amount * trade.leverageX
 
             trade_result = Trade_Result(
-                trade_id=trade.id,
-                end_price=end_price,
-                money=profit
-            )      
+                trade_id=trade.id, end_price=end_price, money=profit
+            )
             session.add(trade_result)
             session.commit()
             session.refresh(trade_result)
 
             trade.status = "completed"
-            trade.trade_result=result
-            trade.result=trade.id
+            trade.trade_result = result
+            trade.result = trade.id
             session.commit()
             session.begin()
             session.refresh(trade)

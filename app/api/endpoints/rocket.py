@@ -14,21 +14,28 @@ LIMIT_ROCKET_TIME = 9
 USLOZHNENIYE = 2  # Усложнение игры. Чем больше, тем раньше закончится ракетка. max=8
 UTC = timezone.utc
 
+
 async def increase_multiplier(websocket: WebSocket, multiplier_state: dict):
     try:
         k = 0.1
         while True:
             multiplier_state["value"] += k
             multiplier_state["value"] = round(multiplier_state["value"], 1)
-            if multiplier_state["value"] > 8: k = 1
-            elif multiplier_state["value"] > 4: k = 0.3
-            elif multiplier_state["value"] == 1.5: k = 0.1
-            
-            await websocket.send_json({"action": "update_multiplier", "value": multiplier_state["value"]})
-            
+            if multiplier_state["value"] > 8:
+                k = 1
+            elif multiplier_state["value"] > 4:
+                k = 0.3
+            elif multiplier_state["value"] == 1.5:
+                k = 0.1
+
+            await websocket.send_json(
+                {"action": "update_multiplier", "value": multiplier_state["value"]}
+            )
+
             await asyncio.sleep(0.1)
     except asyncio.CancelledError:
         raise
+
 
 @router_rocket.websocket("/api/v1/ws/rocket/")
 async def rocket_con(websocket: WebSocket, db: AsyncSession = Depends(get_db)):
@@ -42,9 +49,9 @@ async def rocket_con(websocket: WebSocket, db: AsyncSession = Depends(get_db)):
     await websocket.accept()
     multiplier_task = None
     zabrannyyX = 0
-    
+
     multiplier_state = {"value": 0}
-    
+
     try:
         while True:
             data = await websocket.receive_text()
@@ -57,10 +64,12 @@ async def rocket_con(websocket: WebSocket, db: AsyncSession = Depends(get_db)):
             if user == "no token":
                 await websocket.close()
                 return RedirectResponse(url="/")
-            
+
             if action == "start_bet":
                 start_bet = int(message.get("betValue"))
-                time_uspel = await RandomData(start=START_ROCKET_TIME, limit=LIMIT_ROCKET_TIME).get_time()
+                time_uspel = await RandomData(
+                    start=START_ROCKET_TIME, limit=LIMIT_ROCKET_TIME
+                ).get_time()
                 time_uspel = time_uspel.replace(tzinfo=None)
                 rocket = Rocket(
                     start_bet=start_bet,
@@ -71,12 +80,14 @@ async def rocket_con(websocket: WebSocket, db: AsyncSession = Depends(get_db)):
                 db.add(rocket)
                 await db.commit()
                 await db.refresh(rocket)
-                
+
                 multiplier_state["value"] = 0
 
                 # включение счетчика
-                multiplier_task = asyncio.create_task(increase_multiplier(websocket, multiplier_state))
-                
+                multiplier_task = asyncio.create_task(
+                    increase_multiplier(websocket, multiplier_state)
+                )
+
             if action == "take_profit":
                 # отключение счетчика
                 if multiplier_task and not multiplier_task.done():
@@ -84,7 +95,7 @@ async def rocket_con(websocket: WebSocket, db: AsyncSession = Depends(get_db)):
                     multiplier_task.cancel()
                 else:
                     zabrannyyX = multiplier_state["value"]
-                    
+
                 time_take_profit = datetime.now(timezone.utc).replace(tzinfo=None)
                 rocket.time_take_profit = time_take_profit
                 result = time_uspel - time_take_profit - timedelta(seconds=USLOZHNENIYE)
@@ -93,7 +104,7 @@ async def rocket_con(websocket: WebSocket, db: AsyncSession = Depends(get_db)):
                     uspel = True
                     # обновление икса на финальное значение
                     zabrannyyX = multiplier_state["value"]
-                    end_bet = round(end_bet*zabrannyyX, 2)
+                    end_bet = round(end_bet * zabrannyyX, 2)
                     await UserData(db, user).update_balance(end_bet)
                 else:
                     uspel = False
@@ -103,10 +114,10 @@ async def rocket_con(websocket: WebSocket, db: AsyncSession = Depends(get_db)):
                 rocket.end_bet = end_bet
                 rocket.uspel = uspel
                 rocket.zabrannyyX = zabrannyyX
-                
+
                 await db.commit()
                 await db.refresh(rocket)
-                
+
                 if uspel:
                     await websocket.send_json({"status": "WIN", "end_bet": end_bet})
                 else:
@@ -118,5 +129,3 @@ async def rocket_con(websocket: WebSocket, db: AsyncSession = Depends(get_db)):
         if multiplier_task and not multiplier_task.done():
             multiplier_task.cancel()
         await websocket.close()
-
-

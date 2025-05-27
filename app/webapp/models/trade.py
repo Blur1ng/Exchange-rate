@@ -1,4 +1,6 @@
 from pydantic import BaseModel
+
+
 class Trade_Form(BaseModel):
     exchange: str
     bet_amount: float
@@ -8,6 +10,7 @@ class Trade_Form(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class Trade_EndResult(BaseModel):
     trade_id: int
